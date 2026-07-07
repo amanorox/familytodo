@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>まいにちのTODOリスト</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="app-header">
+    <h1>📋 まいにちのTODOリスト</h1>
+    <div class="date-badge" id="todayLabel"></div>
+  </header>
+
+  <div class="toolbar">
+    <button id="reloadBtn" class="btn btn-reload">🔄 リストをよみこみなおす</button>
+    <span id="statusMsg" class="status-msg"></span>
+  </div>
+
+  <main>
+    <table id="todoTable">
+      <thead>
+        <tr>
+          <th class="col-task">やること</th>
+          <th class="col-check child">こどもチェック</th>
+          <th class="col-check parent">おやチェック</th>
+        </tr>
+      </thead>
+      <tbody id="todoBody">
+        <!-- JSで生成 -->
+      </tbody>
+    </table>
+    <p id="emptyMsg" class="empty-msg" hidden>
+      todo.txt にやることが書かれていません。<br>
+      同じフォルダの <code>todo.txt</code> に1行ずつ書いてください。
+    </p>
+  </main>
+
+  <footer class="app-footer">
+    <p>「todo.txt」を編集するとリストの内容を自由に変えられます。チェックは日付が変わると自動でリセットされます。</p>
+  </footer>
+
+<script src="app.js"></script>
+</body>
+</html>
+
