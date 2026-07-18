@@ -10,6 +10,9 @@ const emptyMsg = document.getElementById("emptyMsg");
 const todayLabel = document.getElementById("todayLabel");
 const statusMsg = document.getElementById("statusMsg");
 const reloadBtn = document.getElementById("reloadBtn");
+const fireworksOverlay = document.getElementById("fireworksOverlay");
+const fireworksCanvas = document.getElementById("fireworksCanvas");
+const fireworksCloseBtn = document.getElementById("fireworksCloseBtn");
 
 function getTodayKey() {
   const d = new Date();
@@ -143,6 +146,7 @@ function renderTable(tasks, state) {
       };
       saveTodayState(currentState);
       updateRowStyle();
+      checkAllParentDone();
     }
 
     childCheck.addEventListener("change", persist);
@@ -157,6 +161,120 @@ function renderTable(tasks, state) {
   });
 }
 
+// ===== 打ち上げ花火エフェクト =====
+let hasCelebratedNow = false; // 今この瞬間「全部完了」状態になっているか（連続発火防止用）
+let fireworksAnimId = null;
+let fireworksLaunchTimer = null;
+const fireworksCtx = fireworksCanvas.getContext("2d");
+let fireworksParticles = [];
+
+function resizeFireworksCanvas() {
+  fireworksCanvas.width = window.innerWidth;
+  fireworksCanvas.height = window.innerHeight;
+}
+
+function randomColor() {
+  const colors = [
+    "#ff5252", "#ff9800", "#ffeb3b", "#4caf50",
+    "#2196f3", "#e040fb", "#ff4081", "#00e5ff",
+  ];
+  return colors[Math.floor(Math.random() * colors.length)];
+}
+
+function launchOneFirework() {
+  const cx = Math.random() * fireworksCanvas.width * 0.8 + fireworksCanvas.width * 0.1;
+  const cy = Math.random() * fireworksCanvas.height * 0.4 + fireworksCanvas.height * 0.15;
+  const color = randomColor();
+  const count = 40 + Math.floor(Math.random() * 30);
+
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 * i) / count;
+    const speed = 2 + Math.random() * 4;
+    fireworksParticles.push({
+      x: cx,
+      y: cy,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      color,
+      life: 1,
+      decay: 0.008 + Math.random() * 0.012,
+    });
+  }
+}
+
+function stepFireworks() {
+  fireworksCtx.fillStyle = "rgba(0, 0, 10, 0.2)";
+  fireworksCtx.fillRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
+
+  fireworksParticles.forEach((p) => {
+    p.vy += 0.03; // 重力
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life -= p.decay;
+  });
+  fireworksParticles = fireworksParticles.filter((p) => p.life > 0);
+
+  fireworksParticles.forEach((p) => {
+    fireworksCtx.globalAlpha = Math.max(p.life, 0);
+    fireworksCtx.fillStyle = p.color;
+    fireworksCtx.beginPath();
+    fireworksCtx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
+    fireworksCtx.fill();
+  });
+  fireworksCtx.globalAlpha = 1;
+
+  fireworksAnimId = requestAnimationFrame(stepFireworks);
+}
+
+function startFireworks() {
+  resizeFireworksCanvas();
+  fireworksParticles = [];
+  fireworksOverlay.hidden = false;
+  fireworksCtx.clearRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
+
+  launchOneFirework();
+  fireworksLaunchTimer = setInterval(launchOneFirework, 600);
+  if (fireworksAnimId === null) {
+    stepFireworks();
+  }
+}
+
+function stopFireworks() {
+  fireworksOverlay.hidden = true;
+  if (fireworksLaunchTimer) {
+    clearInterval(fireworksLaunchTimer);
+    fireworksLaunchTimer = null;
+  }
+  if (fireworksAnimId !== null) {
+    cancelAnimationFrame(fireworksAnimId);
+    fireworksAnimId = null;
+  }
+  fireworksParticles = [];
+}
+
+window.addEventListener("resize", () => {
+  if (!fireworksOverlay.hidden) {
+    resizeFireworksCanvas();
+  }
+});
+
+fireworksCloseBtn.addEventListener("click", stopFireworks);
+
+// おやチェックが全部入ったか確認し、揃った瞬間だけ花火を打ち上げる
+function checkAllParentDone() {
+  const parentChecks = todoBody.querySelectorAll(".parent-check");
+  if (parentChecks.length === 0) return;
+
+  const allDone = Array.from(parentChecks).every((c) => c.checked);
+
+  if (allDone && !hasCelebratedNow) {
+    hasCelebratedNow = true;
+    startFireworks();
+  } else if (!allDone) {
+    hasCelebratedNow = false;
+  }
+}
+
 async function init() {
   todayLabel.textContent = getTodayLabelText();
   cleanupOldStates();
@@ -167,6 +285,13 @@ async function init() {
     const state = loadTodayState();
     renderTable(tasks, state);
     statusMsg.textContent = `${tasks.length}件のリストをよみこみました`;
+
+    // 読み込み直後にすでに全部完了していても、花火は自動で打ち上げない
+    // （ページ再読み込みのたびに毎回花火が出るのを防ぐため）
+    const parentChecks = todoBody.querySelectorAll(".parent-check");
+    hasCelebratedNow =
+      parentChecks.length > 0 &&
+      Array.from(parentChecks).every((c) => c.checked);
   } catch (err) {
     console.error(err);
     statusMsg.textContent =
