@@ -60,7 +60,7 @@ self.addEventListener("fetch", (event) => {
     // キャッシュ優先: キャッシュになければネットワークから取得
     event.respondWith(
       caches.match(event.request).then(
-        (cached) => cached || fetch(event.request)
+        (cached) => cached || fetch(event.request).catch(() => new Response("", { status: 503 }))
       )
     );
   }
