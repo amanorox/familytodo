@@ -51,16 +51,49 @@ function cleanupOldStates() {
   }
 }
 
+// 曜日キーワード（行頭に "MON" や "MON,WED" のように書くと、その曜日だけ表示される）
+const DAY_KEYWORDS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+// 行頭の曜日指定を取り出す正規表現
+// 例: "MON,WED タスク", "MON: タスク", "MON タスク" にマッチ
+const DAY_PREFIX_RE = new RegExp(
+  `^((?:${DAY_KEYWORDS.join("|")})(?:\\s*,\\s*(?:${DAY_KEYWORDS.join("|")}))*)\\s*[:\\-]?\\s+(.*)$`,
+  "i"
+);
+
+// 1行をパースして { days: [曜日配列] | null(=毎日), text: タスク本文 } を返す
+function parseTodoLine(line) {
+  const match = line.match(DAY_PREFIX_RE);
+  if (!match) {
+    return { days: null, text: line };
+  }
+  const days = match[1]
+    .split(",")
+    .map((s) => s.trim().toUpperCase())
+    .filter((s) => s.length > 0);
+  const text = match[2].trim();
+  return { days, text };
+}
+
+function getTodayDayKey() {
+  return DAY_KEYWORDS[new Date().getDay()];
+}
+
 async function fetchTodoList() {
   const res = await fetch(TODO_FILE, { cache: "no-store" });
   if (!res.ok) {
     throw new Error(`todo.txt の読み込みに失敗しました (HTTP ${res.status})`);
   }
   const text = await res.text();
+  const todayKey = getTodayDayKey();
+
   return text
     .split(/\r?\n/)
     .map((line) => line.trim())
-    .filter((line) => line.length > 0 && !line.startsWith("#"));
+    .filter((line) => line.length > 0 && !line.startsWith("#"))
+    .map((line) => parseTodoLine(line))
+    .filter((item) => item.days === null || item.days.includes(todayKey))
+    .map((item) => item.text)
+    .filter((task) => task.length > 0);
 }
 
 function renderTable(tasks, state) {
