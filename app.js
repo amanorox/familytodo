@@ -146,3 +146,10 @@ reloadBtn.addEventListener("click", init);
 
 init();
 
+// Service Worker の登録（PWA オフライン対応）
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("./sw.js").catch((err) => {
+    console.warn("Service Worker の登録に失敗しました:", err);
+  });
+}
+
