@@ -1,5 +1,4 @@
 {
-  "id": "/",
   "name": "まいにちのTODOリスト",
   "short_name": "まいにちTODO",
   "description": "家族みんなで使える毎日のTODOリスト",
@@ -7,7 +6,6 @@
   "scope": "./",
   "display": "fullscreen",
   "display_override": ["standalone", "minimal-ui"],
-  "orientation": "portrait-primary",
   "background_color": "#fff8e7",
   "theme_color": "#ff9800",
   "lang": "ja",
