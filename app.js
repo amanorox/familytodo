@@ -109,7 +109,7 @@ function renderTable(tasks, state) {
   emptyMsg.hidden = true;
 
   tasks.forEach((task) => {
-    const entry = state[task] || { child: false, parent: false };
+    const entry = state[task] || { child1: false, child2: false, parent: false };
 
     const tr = document.createElement("tr");
 
@@ -117,13 +117,21 @@ function renderTable(tasks, state) {
     taskTd.className = "task-cell";
     taskTd.textContent = task;
 
-    const childTd = document.createElement("td");
-    childTd.className = "col-check";
-    const childCheck = document.createElement("input");
-    childCheck.type = "checkbox";
-    childCheck.className = "child-check";
-    childCheck.checked = !!entry.child;
-    childTd.appendChild(childCheck);
+    const child1Td = document.createElement("td");
+    child1Td.className = "col-check";
+    const child1Check = document.createElement("input");
+    child1Check.type = "checkbox";
+    child1Check.className = "child-check child1-check";
+    child1Check.checked = !!entry.child1;
+    child1Td.appendChild(child1Check);
+
+    const child2Td = document.createElement("td");
+    child2Td.className = "col-check";
+    const child2Check = document.createElement("input");
+    child2Check.type = "checkbox";
+    child2Check.className = "child-check child2-check";
+    child2Check.checked = !!entry.child2;
+    child2Td.appendChild(child2Check);
 
     const parentTd = document.createElement("td");
     parentTd.className = "col-check";
@@ -134,14 +142,19 @@ function renderTable(tasks, state) {
     parentTd.appendChild(parentCheck);
 
     function updateRowStyle() {
-      taskTd.classList.toggle("done", childCheck.checked);
-      tr.classList.toggle("all-done", childCheck.checked && parentCheck.checked);
+      const bothChildrenDone = child1Check.checked && child2Check.checked;
+      taskTd.classList.toggle("done", bothChildrenDone);
+      tr.classList.toggle(
+        "all-done",
+        bothChildrenDone && parentCheck.checked
+      );
     }
 
     function persist() {
       const currentState = loadTodayState();
       currentState[task] = {
-        child: childCheck.checked,
+        child1: child1Check.checked,
+        child2: child2Check.checked,
         parent: parentCheck.checked,
       };
       saveTodayState(currentState);
@@ -149,13 +162,15 @@ function renderTable(tasks, state) {
       checkAllParentDone();
     }
 
-    childCheck.addEventListener("change", persist);
+    child1Check.addEventListener("change", persist);
+    child2Check.addEventListener("change", persist);
     parentCheck.addEventListener("change", persist);
 
     updateRowStyle();
 
     tr.appendChild(taskTd);
-    tr.appendChild(childTd);
+    tr.appendChild(child1Td);
+    tr.appendChild(child2Td);
     tr.appendChild(parentTd);
     todoBody.appendChild(tr);
   });

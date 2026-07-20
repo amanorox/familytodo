@@ -1,5 +1,6 @@
 :root {
-  --child-color: #2e9e4f;
+  --child1-color: #2e9e4f;
+  --child2-color: #00897b;
   --parent-color: #2f6fd6;
   --bg-color: #fff8e7;
   --accent: #ff9800;
@@ -102,8 +103,12 @@ thead .col-task {
   padding-left: 20px;
 }
 
-thead .col-check.child {
-  background: var(--child-color);
+thead .col-check.child1 {
+  background: var(--child1-color);
+}
+
+thead .col-check.child2 {
+  background: var(--child2-color);
 }
 
 thead .col-check.parent {
@@ -145,7 +150,11 @@ input[type="checkbox"] {
   width: 32px;
   height: 32px;
   cursor: pointer;
-  accent-color: var(--child-color);
+  accent-color: var(--child1-color);
+}
+
+.child2-check {
+  accent-color: var(--child2-color);
 }
 
 .parent-check {
