@@ -16,7 +16,11 @@
 <body>
   <header class="app-header">
     <h1>📋 まいにちのTODOリスト</h1>
-    <div class="date-badge" id="todayLabel"></div>
+    <div class="date-nav">
+      <button id="prevDateBtn" class="date-nav-btn" aria-label="前の日へ">◀</button>
+      <div class="date-badge" id="todayLabel"></div>
+      <button id="nextDateBtn" class="date-nav-btn" aria-label="次の日へ">▶</button>
+    </div>
   </header>
 
   <div class="toolbar">

@@ -37,12 +37,42 @@ body {
   font-size: 1.6rem;
 }
 
+.date-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .date-badge {
   background: rgba(255,255,255,0.25);
   padding: 6px 14px;
   border-radius: 999px;
   font-size: 1.1rem;
   font-weight: bold;
+  min-width: 12em;
+  text-align: center;
+}
+
+.date-nav-btn {
+  border: none;
+  border-radius: 999px;
+  width: 36px;
+  height: 36px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  background: rgba(255,255,255,0.35);
+  color: #fff;
+  transition: transform 0.1s ease, opacity 0.1s ease;
+}
+
+.date-nav-btn:active {
+  transform: scale(0.9);
+}
+
+.date-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 .toolbar {
@@ -237,6 +267,15 @@ input[type="checkbox"] {
 @media (max-width: 480px) {
   .app-header h1 {
     font-size: 1.2rem;
+  }
+  .date-badge {
+    min-width: 9em;
+    font-size: 0.95rem;
+  }
+  .date-nav-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 0.95rem;
   }
   thead th {
     font-size: 0.85rem;

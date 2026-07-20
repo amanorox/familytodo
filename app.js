@@ -4,28 +4,59 @@
 
 const TODO_FILE = "todo.txt";
 const STORAGE_PREFIX = "familytodo_checks_"; // + YYYY-MM-DD
+const MAX_PAST_DAYS = 3; // 過去何日分まで戻れるか
 
 const todoBody = document.getElementById("todoBody");
 const emptyMsg = document.getElementById("emptyMsg");
 const todayLabel = document.getElementById("todayLabel");
 const statusMsg = document.getElementById("statusMsg");
 const reloadBtn = document.getElementById("reloadBtn");
+const prevDateBtn = document.getElementById("prevDateBtn");
+const nextDateBtn = document.getElementById("nextDateBtn");
 const fireworksOverlay = document.getElementById("fireworksOverlay");
 const fireworksCanvas = document.getElementById("fireworksCanvas");
 const fireworksCloseBtn = document.getElementById("fireworksCloseBtn");
 
-function getTodayKey() {
+// 0 = 今日、1 = 昨日、2 = 一昨日、3 = 3日前 …（過去方向のオフセット日数）
+let selectedOffset = 0;
+
+function getDateByOffset(offset) {
   const d = new Date();
+  d.setDate(d.getDate() - offset);
+  return d;
+}
+
+function getSelectedDate() {
+  return getDateByOffset(selectedOffset);
+}
+
+function getDateKey(d) {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
 }
 
-function getTodayLabelText() {
-  const d = new Date();
+function getTodayKey() {
+  return getDateKey(getSelectedDate());
+}
+
+function getDateLabelText(d) {
   const weekday = ["日", "月", "火", "水", "木", "金", "土"][d.getDay()];
   return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日（${weekday}）`;
+}
+
+function getTodayLabelText() {
+  const d = getSelectedDate();
+  const label = getDateLabelText(d);
+  if (selectedOffset === 0) return label;
+  if (selectedOffset === 1) return `${label}・きのう`;
+  return `${label}・${selectedOffset}日前`;
+}
+
+function updateDateNavButtons() {
+  prevDateBtn.disabled = selectedOffset >= MAX_PAST_DAYS;
+  nextDateBtn.disabled = selectedOffset <= 0;
 }
 
 function loadTodayState() {
@@ -44,11 +75,15 @@ function saveTodayState(state) {
 }
 
 // 古い日付のチェックデータは掃除しておく（ストレージ肥大化防止）
+// 過去 MAX_PAST_DAYS 日分（今日を含む）はナビゲーションで使うので残す
 function cleanupOldStates() {
-  const todayKey = STORAGE_PREFIX + getTodayKey();
+  const keepKeys = new Set();
+  for (let offset = 0; offset <= MAX_PAST_DAYS; offset++) {
+    keepKeys.add(STORAGE_PREFIX + getDateKey(getDateByOffset(offset)));
+  }
   for (let i = localStorage.length - 1; i >= 0; i--) {
     const key = localStorage.key(i);
-    if (key && key.startsWith(STORAGE_PREFIX) && key !== todayKey) {
+    if (key && key.startsWith(STORAGE_PREFIX) && !keepKeys.has(key)) {
       localStorage.removeItem(key);
     }
   }
@@ -78,7 +113,7 @@ function parseTodoLine(line) {
 }
 
 function getTodayDayKey() {
-  return DAY_KEYWORDS[new Date().getDay()];
+  return DAY_KEYWORDS[getSelectedDate().getDay()];
 }
 
 async function fetchTodoList() {
@@ -292,6 +327,7 @@ function checkAllParentDone() {
 
 async function init() {
   todayLabel.textContent = getTodayLabelText();
+  updateDateNavButtons();
   cleanupOldStates();
   statusMsg.textContent = "よみこみちゅう...";
 
@@ -299,7 +335,8 @@ async function init() {
     const tasks = await fetchTodoList();
     const state = loadTodayState();
     renderTable(tasks, state);
-    statusMsg.textContent = `${tasks.length}件のリストをよみこみました`;
+    const dateNote = selectedOffset === 0 ? "" : "（過去のきろく）";
+    statusMsg.textContent = `${tasks.length}件のリストをよみこみました${dateNote}`;
 
     // 読み込み直後にすでに全部完了していても、花火は自動で打ち上げない
     // （ページ再読み込みのたびに毎回花火が出るのを防ぐため）
@@ -316,6 +353,18 @@ async function init() {
 }
 
 reloadBtn.addEventListener("click", init);
+
+prevDateBtn.addEventListener("click", () => {
+  if (selectedOffset >= MAX_PAST_DAYS) return;
+  selectedOffset += 1;
+  init();
+});
+
+nextDateBtn.addEventListener("click", () => {
+  if (selectedOffset <= 0) return;
+  selectedOffset -= 1;
+  init();
+});
 
 init();
 
