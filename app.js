@@ -219,7 +219,7 @@ const fireworksCtx = fireworksCanvas.getContext("2d");
 let fireworksParticles = [];
 
 // 猫の形をした花火が出現する確率（0〜1）。0.2 なら約20%の確率で猫花火になる
-const CAT_FIREWORK_CHANCE = 0.1;
+const CAT_FIREWORK_CHANCE = 0.2;
 // 猫花火が完全な形になるまでのフレーム数（大きいほどゆっくり形になる）
 const CAT_FIREWORK_ARRIVE_FRAMES = 34;
 
