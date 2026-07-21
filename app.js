@@ -218,6 +218,11 @@ let fireworksLaunchTimer = null;
 const fireworksCtx = fireworksCanvas.getContext("2d");
 let fireworksParticles = [];
 
+// 猫の形をした花火が出現する確率（0〜1）。0.2 なら約20%の確率で猫花火になる
+const CAT_FIREWORK_CHANCE = 0.1;
+// 猫花火が完全な形になるまでのフレーム数（大きいほどゆっくり形になる）
+const CAT_FIREWORK_ARRIVE_FRAMES = 34;
+
 function resizeFireworksCanvas() {
   fireworksCanvas.width = window.innerWidth;
   fireworksCanvas.height = window.innerHeight;
@@ -231,9 +236,83 @@ function randomColor() {
   return colors[Math.floor(Math.random() * colors.length)];
 }
 
+// 猫の顔の輪郭を正規化座標（-1〜1 目安、原点が顔の中心）の点群として返す
+// x: 右がプラス, y: 下がプラス（キャンバス座標系に合わせる。耳は上＝マイナス方向）
+function getCatShapePoints() {
+  const pts = [];
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const addSegment = (x1, y1, x2, y2, count) => {
+    for (let i = 0; i <= count; i++) {
+      const t = i / count;
+      pts.push([lerp(x1, x2, t), lerp(y1, y2, t)]);
+    }
+  };
+  const addArc = (cx, cy, r, startDeg, endDeg, count, scaleY = 1) => {
+    for (let i = 0; i <= count; i++) {
+      const t = i / count;
+      const angle = ((lerp(startDeg, endDeg, t)) * Math.PI) / 180;
+      pts.push([cx + Math.cos(angle) * r, cy + Math.sin(angle) * r * scaleY]);
+    }
+  };
+
+  // 顔の輪郭（耳の間の上部を除いた円弧）
+  addArc(0, 0.05, 0.55, 20, 340, 36, 0.95);
+  // 左耳
+  addSegment(-0.42, -0.28, -0.62, -0.88, 8);
+  addSegment(-0.62, -0.88, -0.14, -0.4, 8);
+  // 右耳
+  addSegment(0.42, -0.28, 0.62, -0.88, 8);
+  addSegment(0.62, -0.88, 0.14, -0.4, 8);
+  // 目
+  addArc(-0.2, -0.05, 0.07, 0, 360, 8);
+  addArc(0.2, -0.05, 0.07, 0, 360, 8);
+  // 鼻
+  pts.push([0, 0.08], [-0.04, 0.03], [0.04, 0.03]);
+  // 口（Vの字）
+  addSegment(0, 0.1, -0.12, 0.2, 4);
+  addSegment(0, 0.1, 0.12, 0.2, 4);
+  // ひげ（左右各2本）
+  addSegment(-0.28, 0.08, -0.68, 0.0, 4);
+  addSegment(-0.28, 0.16, -0.68, 0.2, 4);
+  addSegment(0.28, 0.08, 0.68, 0.0, 4);
+  addSegment(0.28, 0.16, 0.68, 0.2, 4);
+
+  return pts;
+}
+
+// 猫の形をした花火を打ち上げる
+// パーティクルは目標座標に向かって直進し、到達すると重力を受けずにその場に留まる
+function launchCatFirework(cx, cy) {
+  const color = randomColor();
+  const scale = 70 + Math.random() * 30;
+  const shapePoints = getCatShapePoints();
+
+  shapePoints.forEach(([nx, ny]) => {
+    const targetX = cx + nx * scale;
+    const targetY = cy + ny * scale;
+    fireworksParticles.push({
+      x: cx,
+      y: cy,
+      vx: (targetX - cx) / CAT_FIREWORK_ARRIVE_FRAMES,
+      vy: (targetY - cy) / CAT_FIREWORK_ARRIVE_FRAMES,
+      color,
+      life: 1,
+      decay: 0.012 + Math.random() * 0.008,
+      isCat: true,
+      arriveIn: CAT_FIREWORK_ARRIVE_FRAMES,
+    });
+  });
+}
+
 function launchOneFirework() {
   const cx = Math.random() * fireworksCanvas.width * 0.8 + fireworksCanvas.width * 0.1;
   const cy = Math.random() * fireworksCanvas.height * 0.4 + fireworksCanvas.height * 0.15;
+
+  if (Math.random() < CAT_FIREWORK_CHANCE) {
+    launchCatFirework(cx, cy);
+    return;
+  }
+
   const color = randomColor();
   const count = 40 + Math.floor(Math.random() * 30);
 
@@ -257,9 +336,22 @@ function stepFireworks() {
   fireworksCtx.fillRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
 
   fireworksParticles.forEach((p) => {
-    p.vy += 0.03; // 重力
-    p.x += p.vx;
-    p.y += p.vy;
+    if (p.isCat) {
+      // 目標座標に到達するまでは直進し、到達後は重力なしでその場に留まって形を保つ
+      if (p.arriveIn > 0) {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.arriveIn -= 1;
+        if (p.arriveIn === 0) {
+          p.vx = 0;
+          p.vy = 0;
+        }
+      }
+    } else {
+      p.vy += 0.03; // 重力
+      p.x += p.vx;
+      p.y += p.vy;
+    }
     p.life -= p.decay;
   });
   fireworksParticles = fireworksParticles.filter((p) => p.life > 0);
