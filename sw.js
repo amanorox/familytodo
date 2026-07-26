@@ -1,14 +1,17 @@
 // familytodo - sw.js
 // Service Worker: オフライン対応のためにアプリファイルをキャッシュします。
 
-const CACHE_NAME = "familytodo-v3";
+const CACHE_NAME = "familytodo-v4";
 
 // インストール時にキャッシュするファイル一覧
 const APP_SHELL = [
   "./",
   "./index.html",
+  "./edit.html",
   "./style.css",
   "./app.js",
+  "./edit.js",
+  "./todo-diff.js",
   "./manifest.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png",

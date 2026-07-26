@@ -89,28 +89,7 @@ function cleanupOldStates() {
   }
 }
 
-// 曜日キーワード（行頭に "MON" や "MON,WED" のように書くと、その曜日だけ表示される）
-const DAY_KEYWORDS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
-// 行頭の曜日指定を取り出す正規表現
-// 例: "MON,WED タスク", "MON: タスク", "MON タスク" にマッチ
-const DAY_PREFIX_RE = new RegExp(
-  `^((?:${DAY_KEYWORDS.join("|")})(?:\\s*,\\s*(?:${DAY_KEYWORDS.join("|")}))*)\\s*[:\\-]?\\s+(.*)$`,
-  "i"
-);
-
-// 1行をパースして { days: [曜日配列] | null(=毎日), text: タスク本文 } を返す
-function parseTodoLine(line) {
-  const match = line.match(DAY_PREFIX_RE);
-  if (!match) {
-    return { days: null, text: line };
-  }
-  const days = match[1]
-    .split(",")
-    .map((s) => s.trim().toUpperCase())
-    .filter((s) => s.length > 0);
-  const text = match[2].trim();
-  return { days, text };
-}
+// 曜日キーワードや1行のパース処理、todo.txt差分の合成処理は todo-diff.js を参照
 
 function getTodayDayKey() {
   return DAY_KEYWORDS[getSelectedDate().getDay()];
@@ -124,10 +103,11 @@ async function fetchTodoList() {
   const text = await res.text();
   const todayKey = getTodayDayKey();
 
-  return text
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0 && !line.startsWith("#"))
+  const rawLines = extractRawLines(text);
+  const diff = loadTodoDiff();
+  const mergedLines = applyTodoDiff(rawLines, diff);
+
+  return mergedLines
     .map((line) => parseTodoLine(line))
     .filter((item) => item.days === null || item.days.includes(todayKey))
     .map((item) => item.text)
@@ -428,7 +408,8 @@ async function init() {
     const state = loadTodayState();
     renderTable(tasks, state);
     const dateNote = selectedOffset === 0 ? "" : "（過去のきろく）";
-    statusMsg.textContent = `${tasks.length}件のリストをよみこみました${dateNote}`;
+    const diffNote = hasTodoDiff() ? "（編集した内容を反映中）" : "";
+    statusMsg.textContent = `${tasks.length}件のリストをよみこみました${dateNote}${diffNote}`;
 
     // 読み込み直後にすでに全部完了していても、花火は自動で打ち上げない
     // （ページ再読み込みのたびに毎回花火が出るのを防ぐため）

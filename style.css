@@ -43,6 +43,26 @@ body {
   gap: 8px;
 }
 
+.edit-link {
+  color: #fff;
+  text-decoration: none;
+  font-weight: bold;
+  background: rgba(255,255,255,0.25);
+  padding: 8px 14px;
+  border-radius: 999px;
+  white-space: nowrap;
+  transition: transform 0.1s ease, opacity 0.1s ease;
+}
+
+.edit-link:active {
+  transform: scale(0.96);
+}
+
+.edit-link-spacer {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .date-badge {
   background: rgba(255,255,255,0.25);
   padding: 6px 14px;
@@ -100,6 +120,21 @@ body {
 .btn-reload {
   background: #4caf50;
   color: #fff;
+}
+
+.btn-add {
+  background: #2196f3;
+  color: #fff;
+}
+
+.btn-save {
+  background: #ff9800;
+  color: #fff;
+}
+
+.btn-reset {
+  background: #eee;
+  color: #555;
 }
 
 .status-msg {
@@ -201,6 +236,104 @@ input[type="checkbox"] {
   border-radius: 14px;
 }
 
+/* ===== 編集ページ ===== */
+
+.edit-note {
+  background: #fff3d6;
+  border: 1px solid #f0d999;
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #6b5518;
+  margin-bottom: 18px;
+}
+
+.edit-note code {
+  background: rgba(0,0,0,0.08);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.edit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.edit-row {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  padding: 14px 16px;
+}
+
+.edit-row-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.edit-text-input {
+  flex: 1;
+  font-size: 1.05rem;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  min-width: 0;
+}
+
+.edit-text-input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.edit-remove-btn {
+  flex: none;
+  width: 42px;
+  height: 42px;
+  border: none;
+  border-radius: 8px;
+  background: #ffe0e0;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.edit-remove-btn:active {
+  transform: scale(0.92);
+}
+
+.edit-days {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  font-size: 0.9rem;
+  color: #555;
+  border-top: 1px dashed var(--border);
+  padding-top: 10px;
+}
+
+.edit-days label {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.edit-days input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--accent);
+}
+
+.edit-day-all {
+  font-weight: bold;
+  margin-right: 6px;
+}
+
 .app-footer {
   margin-top: 30px;
   padding: 0 20px;
@@ -288,6 +421,17 @@ input[type="checkbox"] {
   input[type="checkbox"] {
     width: 26px;
     height: 26px;
+  }
+  .edit-link {
+    font-size: 0.85rem;
+    padding: 6px 10px;
+  }
+  .edit-text-input {
+    font-size: 0.95rem;
+  }
+  .edit-drag-handle {
+    width: 32px;
+    font-size: 1.1rem;
   }
 }
 

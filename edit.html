@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TODOリストの編集 - まいにちのTODOリスト</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ff9800">
+<!-- iOS / iPadOS ホーム画面追加サポート -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="まいにちTODO">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="app-header">
+    <a href="index.html" class="edit-link" title="トップページへもどる">◀ もどる</a>
+    <h1>✏️ TODOリストの編集</h1>
+    <span class="edit-link edit-link-spacer" aria-hidden="true">◀ もどる</span>
+  </header>
+
+  <div class="toolbar">
+    <button id="addRowBtn" class="btn btn-add">＋ やることを追加</button>
+    <button id="saveBtn" class="btn btn-save">💾 保存する</button>
+    <button id="resetBtn" class="btn btn-reset">↩ 元の内容にもどす</button>
+    <span id="editStatusMsg" class="status-msg"></span>
+  </div>
+
+  <main>
+    <p class="edit-note">
+      ここでの編集は <code>todo.txt</code> そのものを書き換えるのではなく、
+      この端末の<strong>ブラウザに「差分」として保存</strong>されます。<br>
+      そのため、他の端末やブラウザには反映されません。ずっと使うタスクにしたい場合は、
+      管理者に <code>todo.txt</code> を直接編集してもらってください。
+    </p>
+    <div id="editList" class="edit-list"><!-- JSで生成 --></div>
+    <p id="editEmptyMsg" class="empty-msg" hidden>
+      やることがありません。「＋ やることを追加」から追加してください。
+    </p>
+  </main>
+
+  <footer class="app-footer">
+    <p>
+      「毎日」のチェックを外すと、表示する曜日を個別に選べます。曜日を1つも選ばないと「毎日」と同じ扱いになります。
+    </p>
+  </footer>
+
+<script src="todo-diff.js"></script>
+<script src="edit.js"></script>
+</body>
+</html>
+
