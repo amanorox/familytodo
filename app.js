@@ -203,6 +203,9 @@ const CAT_FIREWORK_CHANCE = 0.2;
 // 猫花火が完全な形になるまでのフレーム数（大きいほどゆっくり形になる）
 const CAT_FIREWORK_ARRIVE_FRAMES = 34;
 
+const TURTLE_FIREWORK_CHANCE = 0.1;
+const TURTLE_FIREWORK_ARRIVE_FRAMES = 34;
+
 function resizeFireworksCanvas() {
   fireworksCanvas.width = window.innerWidth;
   fireworksCanvas.height = window.innerHeight;
@@ -260,12 +263,48 @@ function getCatShapePoints() {
   return pts;
 }
 
-// 猫の形をした花火を打ち上げる
-// パーティクルは目標座標に向かって直進し、到達すると重力を受けずにその場に留まる
-function launchCatFirework(cx, cy) {
+// 亀の甲羅・頭・手足・しっぽの輪郭を正規化座標の点群として返す
+function getTurtleShapePoints() {
+  const pts = [];
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const addSegment = (x1, y1, x2, y2, count) => {
+    for (let i = 0; i <= count; i++) {
+      const t = i / count;
+      pts.push([lerp(x1, x2, t), lerp(y1, y2, t)]);
+    }
+  };
+  const addArc = (cx, cy, r, startDeg, endDeg, count, scaleX = 1, scaleY = 1) => {
+    for (let i = 0; i <= count; i++) {
+      const t = i / count;
+      const angle = ((lerp(startDeg, endDeg, t)) * Math.PI) / 180;
+      pts.push([cx + Math.cos(angle) * r * scaleX, cy + Math.sin(angle) * r * scaleY]);
+    }
+  };
+
+  // 甲羅（横長の楕円）
+  addArc(0, 0, 0.55, 0, 360, 40, 1.1, 0.75);
+  // 甲羅の模様（内側の楕円）
+  addArc(0, 0, 0.32, 0, 360, 24, 1.1, 0.75);
+  // 頭
+  addArc(0.72, 0, 0.16, -90, 90, 12);
+  // 尻尾
+  addSegment(-0.6, 0, -0.85, 0.1, 6);
+  // 右前足
+  addSegment(0.35, -0.35, 0.55, -0.62, 6);
+  // 左前足
+  addSegment(0.35, 0.35, 0.55, 0.62, 6);
+  // 右後ろ足
+  addSegment(-0.35, -0.35, -0.55, -0.6, 6);
+  // 左後ろ足
+  addSegment(-0.35, 0.35, -0.55, 0.6, 6);
+
+  return pts;
+}
+
+// 目標座標に向かって直進し、到達すると重力を受けずにその場に留まる形状花火を打ち上げる
+function launchShapedFirework(cx, cy, shapePoints, arriveFrames) {
   const color = randomColor();
   const scale = 70 + Math.random() * 30;
-  const shapePoints = getCatShapePoints();
 
   shapePoints.forEach(([nx, ny]) => {
     const targetX = cx + nx * scale;
@@ -273,23 +312,38 @@ function launchCatFirework(cx, cy) {
     fireworksParticles.push({
       x: cx,
       y: cy,
-      vx: (targetX - cx) / CAT_FIREWORK_ARRIVE_FRAMES,
-      vy: (targetY - cy) / CAT_FIREWORK_ARRIVE_FRAMES,
+      vx: (targetX - cx) / arriveFrames,
+      vy: (targetY - cy) / arriveFrames,
       color,
       life: 1,
       decay: 0.012 + Math.random() * 0.008,
-      isCat: true,
-      arriveIn: CAT_FIREWORK_ARRIVE_FRAMES,
+      isShaped: true,
+      arriveIn: arriveFrames,
     });
   });
+}
+
+// 猫の形をした花火を打ち上げる
+function launchCatFirework(cx, cy) {
+  launchShapedFirework(cx, cy, getCatShapePoints(), CAT_FIREWORK_ARRIVE_FRAMES);
+}
+
+// 亀の形をした花火を打ち上げる
+function launchTurtleFirework(cx, cy) {
+  launchShapedFirework(cx, cy, getTurtleShapePoints(), TURTLE_FIREWORK_ARRIVE_FRAMES);
 }
 
 function launchOneFirework() {
   const cx = Math.random() * fireworksCanvas.width * 0.8 + fireworksCanvas.width * 0.1;
   const cy = Math.random() * fireworksCanvas.height * 0.4 + fireworksCanvas.height * 0.15;
 
-  if (Math.random() < CAT_FIREWORK_CHANCE) {
+  const shapeRoll = Math.random();
+  if (shapeRoll < CAT_FIREWORK_CHANCE) {
     launchCatFirework(cx, cy);
+    return;
+  }
+  if (shapeRoll < CAT_FIREWORK_CHANCE + TURTLE_FIREWORK_CHANCE) {
+    launchTurtleFirework(cx, cy);
     return;
   }
 
@@ -316,7 +370,7 @@ function stepFireworks() {
   fireworksCtx.fillRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
 
   fireworksParticles.forEach((p) => {
-    if (p.isCat) {
+    if (p.isShaped) {
       // 目標座標に到達するまでは直進し、到達後は重力なしでその場に留まって形を保つ
       if (p.arriveIn > 0) {
         p.x += p.vx;
