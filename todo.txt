@@ -8,6 +8,7 @@
 おくすり を 飲む
 は を みがく（よる）
 あした の じゅんび を する
+おかたづけ を する
 SUN,MON,TUE,WED,THU 連絡帳・お手ふきタオル・帽子・汗ふきタオル
 SUN,MON,TUE,WED,THU おべんきょう道具
 SUN,MON,TUE,WED,THU 虫よけスプレー
