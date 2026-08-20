@@ -132,29 +132,41 @@ function renderTable(tasks, state) {
     taskTd.className = "task-cell";
     taskTd.textContent = task;
 
+    // 猫スタンプ風チェックボックスを1個作る（見た目用の label + span を追加）
+    function createCatStampCheck(checkboxClass, stampClass) {
+      const label = document.createElement("label");
+      label.className = `cat-stamp ${stampClass}`;
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.className = checkboxClass;
+      const mark = document.createElement("span");
+      mark.className = "stamp-mark";
+      mark.setAttribute("aria-hidden", "true");
+      label.appendChild(input);
+      label.appendChild(mark);
+      return { label, input };
+    }
+
     const child1Td = document.createElement("td");
     child1Td.className = "col-check";
-    const child1Check = document.createElement("input");
-    child1Check.type = "checkbox";
-    child1Check.className = "child-check child1-check";
+    const child1Stamp = createCatStampCheck("child-check child1-check", "cat-stamp-child1");
+    const child1Check = child1Stamp.input;
     child1Check.checked = !!entry.child1;
-    child1Td.appendChild(child1Check);
+    child1Td.appendChild(child1Stamp.label);
 
     const child2Td = document.createElement("td");
     child2Td.className = "col-check";
-    const child2Check = document.createElement("input");
-    child2Check.type = "checkbox";
-    child2Check.className = "child-check child2-check";
+    const child2Stamp = createCatStampCheck("child-check child2-check", "cat-stamp-child2");
+    const child2Check = child2Stamp.input;
     child2Check.checked = !!entry.child2;
-    child2Td.appendChild(child2Check);
+    child2Td.appendChild(child2Stamp.label);
 
     const parentTd = document.createElement("td");
     parentTd.className = "col-check";
-    const parentCheck = document.createElement("input");
-    parentCheck.type = "checkbox";
-    parentCheck.className = "parent-check";
+    const parentStamp = createCatStampCheck("parent-check", "cat-stamp-parent");
+    const parentCheck = parentStamp.input;
     parentCheck.checked = !!entry.parent;
-    parentTd.appendChild(parentCheck);
+    parentTd.appendChild(parentStamp.label);
 
     function updateRowStyle() {
       const bothChildrenDone = child1Check.checked && child2Check.checked;

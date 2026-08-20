@@ -211,19 +211,104 @@ tbody tr.all-done {
   font-weight: normal;
 }
 
-input[type="checkbox"] {
-  width: 32px;
-  height: 32px;
+/* ===== 猫スタンプ風チェックボックス ===== */
+
+.cat-stamp {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
   cursor: pointer;
-  accent-color: var(--child1-color);
+  background: #fff;
+  border: 3px solid var(--child1-color);
+  box-shadow: inset 0 0 0 2px #fff;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 
-.child2-check {
-  accent-color: var(--child2-color);
+.cat-stamp:active {
+  transform: scale(0.9);
 }
 
-.parent-check {
-  accent-color: var(--parent-color);
+.cat-stamp input[type="checkbox"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.cat-stamp .stamp-mark {
+  font-size: 1.5rem;
+  line-height: 1;
+  opacity: 0.35;
+  filter: grayscale(1);
+  transform: scale(0.85) rotate(0deg);
+  transition: opacity 0.15s ease, filter 0.15s ease, transform 0.15s ease;
+  user-select: none;
+}
+
+.cat-stamp .stamp-mark::before {
+  content: "🐾";
+}
+
+.cat-stamp input:checked ~ .stamp-mark {
+  opacity: 1;
+  filter: none;
+  animation: stamp-pop 0.35s ease;
+}
+
+.cat-stamp input:checked ~ .stamp-mark::before {
+  content: "😺";
+}
+
+.cat-stamp input:focus-visible ~ .stamp-mark {
+  outline: 3px solid #333;
+  outline-offset: 2px;
+  border-radius: 50%;
+}
+
+@keyframes stamp-pop {
+  0% {
+    transform: scale(0.4) rotate(-25deg);
+  }
+  55% {
+    transform: scale(1.25) rotate(8deg);
+  }
+  75% {
+    transform: scale(0.92) rotate(-4deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+.cat-stamp-child1 {
+  border-color: var(--child1-color);
+}
+
+.cat-stamp-child1 input:checked ~ .stamp-mark {
+  text-shadow: 0 0 6px var(--child1-color);
+}
+
+.cat-stamp-child2 {
+  border-color: var(--child2-color);
+}
+
+.cat-stamp-child2 input:checked ~ .stamp-mark {
+  text-shadow: 0 0 6px var(--child2-color);
+}
+
+.cat-stamp-parent {
+  border-color: var(--parent-color);
+}
+
+.cat-stamp-parent input:checked ~ .stamp-mark {
+  text-shadow: 0 0 6px var(--parent-color);
 }
 
 .empty-msg {
@@ -418,9 +503,13 @@ input[type="checkbox"] {
     font-size: 0.95rem;
     padding: 10px 4px;
   }
-  input[type="checkbox"] {
-    width: 26px;
-    height: 26px;
+  .cat-stamp {
+    width: 36px;
+    height: 36px;
+    border-width: 2px;
+  }
+  .cat-stamp .stamp-mark {
+    font-size: 1.1rem;
   }
   .edit-link {
     font-size: 0.85rem;
