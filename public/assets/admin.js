@@ -7,6 +7,7 @@ let dayState = null;
 let scheduleTasks = [];
 let dateKey = "";
 let reorderingTasks = false;
+let editingTaskId = null;
 
 function setControlsEnabled(enabled) {
   document.querySelectorAll("button, input, select").forEach((control) => {
@@ -28,37 +29,137 @@ function emitScheduleUpdate(payload) {
   });
 }
 
-function setRepeatFields() {
-  const type = document.getElementById("repeat-type").value;
-  document.getElementById("weekday-field").hidden = type !== "weekly";
-  document.getElementById("single-date-field").hidden = type !== "single";
-  document.getElementById("scheduled-date").required = type === "single";
+function setRepeatFields(form) {
+  const type = form.querySelector('[name="repeatType"]').value;
+  form.querySelector(".weekday-field").hidden = type !== "weekly";
+  form.querySelector(".single-date-field").hidden = type !== "single";
+  form.querySelector('[name="scheduledDate"]').required = type === "single";
 }
 
 function clearForm() {
   document.getElementById("task-form").reset();
-  document.getElementById("task-id").value = "";
   document.getElementById("task-category").value = "せいかつ";
-  document.getElementById("form-title").textContent = "➕ タスクを登録";
-  document.getElementById("cancel-edit").hidden = true;
-  document.getElementById("new-task").hidden = true;
-  setRepeatFields();
+  setRepeatFields(document.getElementById("task-form"));
 }
 
-function editTask(task) {
-  document.getElementById("task-id").value = task.id;
-  document.getElementById("task-title").value = task.title;
-  document.getElementById("task-category").value = task.category;
-  document.getElementById("repeat-type").value = task.repeatType;
-  document.getElementById("scheduled-date").value = task.scheduledDate || "";
-  document.querySelectorAll(".weekday-options input").forEach((input) => {
-    input.checked = task.repeatDays.includes(Number(input.value));
+function createTaskEditor(task) {
+  const form = document.createElement("form");
+  form.className = "task-editor form-grid";
+
+  const titleField = document.createElement("label");
+  titleField.className = "field wide";
+  titleField.append("やること");
+  const titleInput = document.createElement("input");
+  titleInput.name = "title";
+  titleInput.maxLength = 120;
+  titleInput.required = true;
+  titleInput.value = task.title;
+  titleField.append(titleInput);
+
+  const categoryField = document.createElement("label");
+  categoryField.className = "field";
+  categoryField.append("カテゴリ");
+  const categoryInput = document.createElement("input");
+  categoryInput.name = "category";
+  categoryInput.maxLength = 60;
+  categoryInput.value = task.category;
+  categoryField.append(categoryInput);
+
+  const repeatField = document.createElement("label");
+  repeatField.className = "field";
+  repeatField.append("くり返し");
+  const repeatSelect = document.createElement("select");
+  repeatSelect.name = "repeatType";
+  [
+    ["daily", "毎日"],
+    ["weekly", "曜日を指定"],
+    ["single", "日付を指定（単発）"],
+  ].forEach(([value, label]) => {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = label;
+    repeatSelect.append(option);
   });
-  document.getElementById("form-title").textContent = "✏️ タスクを編集";
-  document.getElementById("cancel-edit").hidden = false;
-  document.getElementById("new-task").hidden = false;
-  setRepeatFields();
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  repeatSelect.value = task.repeatType;
+  repeatField.append(repeatSelect);
+
+  const weekdayField = document.createElement("div");
+  weekdayField.className = "field wide weekday-field";
+  const weekdayTitle = document.createElement("span");
+  weekdayTitle.textContent = "曜日（複数選択できます）";
+  const weekdayOptions = document.createElement("div");
+  weekdayOptions.className = "weekday-options";
+  weekdayLabels.slice(1).concat(weekdayLabels[0]).forEach((label, index) => {
+    const day = (index + 1) % 7;
+    const optionLabel = document.createElement("label");
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.name = "repeatDays";
+    checkbox.value = String(day);
+    checkbox.checked = task.repeatDays.includes(day);
+    optionLabel.append(checkbox, label);
+    weekdayOptions.append(optionLabel);
+  });
+  weekdayField.append(weekdayTitle, weekdayOptions);
+
+  const dateField = document.createElement("label");
+  dateField.className = "field single-date-field";
+  dateField.append("実施日");
+  const dateInput = document.createElement("input");
+  dateInput.type = "date";
+  dateInput.name = "scheduledDate";
+  dateInput.value = task.scheduledDate || "";
+  dateField.append(dateInput);
+
+  const actions = document.createElement("div");
+  actions.className = "form-actions wide";
+  const save = document.createElement("button");
+  save.className = "button primary";
+  save.type = "submit";
+  save.textContent = "保存する";
+  save.disabled = !socket.connected;
+  const cancel = document.createElement("button");
+  cancel.className = "button secondary";
+  cancel.type = "button";
+  cancel.textContent = "キャンセル";
+  cancel.addEventListener("click", () => {
+    editingTaskId = null;
+    renderSchedule();
+  });
+  actions.append(save, cancel);
+
+  form.append(titleField, categoryField, repeatField, weekdayField, dateField, actions);
+  repeatSelect.addEventListener("change", () => setRepeatFields(form));
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    save.disabled = true;
+    try {
+      await emitScheduleUpdate({ action: "upsert", taskData: taskDataFromForm(form, task.id) });
+      editingTaskId = null;
+      await loadSchedule();
+      showNotice("タスクを保存しました。");
+    } catch (error) {
+      showNotice(error.message, true);
+    } finally {
+      save.disabled = !socket.connected;
+    }
+  });
+  setRepeatFields(form);
+  return form;
+}
+
+function taskDataFromForm(form, id) {
+  const repeatType = form.querySelector('[name="repeatType"]').value;
+  return {
+    id,
+    title: form.querySelector('[name="title"]').value,
+    category: form.querySelector('[name="category"]').value,
+    repeatType,
+    repeatDays: repeatType === "weekly"
+      ? [...form.querySelectorAll('[name="repeatDays"]:checked')].map((input) => Number(input.value))
+      : [],
+    scheduledDate: form.querySelector('[name="scheduledDate"]').value,
+  };
 }
 
 function createTodayTask(task) {
@@ -170,6 +271,12 @@ function renderSchedule() {
     const row = document.createElement("div");
     row.className = "admin-task";
     row.dataset.taskId = String(task.id);
+    if (task.id === editingTaskId) {
+      row.classList.add("is-editing");
+      row.append(createTaskEditor(task));
+      allTasks.append(row);
+      return;
+    }
     const detail = document.createElement("div");
     detail.className = "admin-task-main";
     const title = document.createElement("strong");
@@ -206,7 +313,10 @@ function renderSchedule() {
     edit.type = "button";
     edit.className = "small-button";
     edit.textContent = "編集";
-    edit.addEventListener("click", () => editTask(task));
+    edit.addEventListener("click", () => {
+      editingTaskId = task.id;
+      renderSchedule();
+    });
     const remove = document.createElement("button");
     remove.type = "button";
     remove.className = "small-button delete";
@@ -311,24 +421,12 @@ async function loadSchedule() {
   renderChildren(data.children);
 }
 
-document.getElementById("repeat-type").addEventListener("change", setRepeatFields);
-document.getElementById("cancel-edit").addEventListener("click", clearForm);
-document.getElementById("new-task").addEventListener("click", clearForm);
-document.getElementById("task-form").addEventListener("submit", async (event) => {
+const taskForm = document.getElementById("task-form");
+taskForm.querySelector('[name="repeatType"]').addEventListener("change", () => setRepeatFields(taskForm));
+taskForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  const repeatType = document.getElementById("repeat-type").value;
-  const taskData = {
-    id: document.getElementById("task-id").value ? Number(document.getElementById("task-id").value) : undefined,
-    title: document.getElementById("task-title").value,
-    category: document.getElementById("task-category").value,
-    repeatType,
-    repeatDays: repeatType === "weekly"
-      ? [...document.querySelectorAll(".weekday-options input:checked")].map((input) => Number(input.value))
-      : [],
-    scheduledDate: document.getElementById("scheduled-date").value,
-  };
   try {
-    await emitScheduleUpdate({ action: "upsert", taskData });
+    await emitScheduleUpdate({ action: "upsert", taskData: taskDataFromForm(taskForm) });
     clearForm();
     await loadSchedule();
     showNotice("タスクを保存しました。");
@@ -382,4 +480,4 @@ document.addEventListener("pointermove", moveDraggedTask);
 document.addEventListener("pointerup", (event) => finishTaskDrag(event));
 document.addEventListener("pointercancel", (event) => finishTaskDrag(event, true));
 loadSchedule().catch((error) => showNotice(error.message, true));
-setRepeatFields();
+setRepeatFields(taskForm);

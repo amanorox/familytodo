@@ -84,6 +84,8 @@ button { cursor: pointer; }
 .task-list { display: grid; gap: 10px; }
 .admin-task, .today-task { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 14px; border: 1px solid #eee8dd; border-radius: 11px; }
 .admin-task-main { min-width: 0; }
+.admin-task.is-editing { display: block; }
+.admin-task.is-editing .task-editor { width: 100%; }
 .admin-task-title { display: block; font-weight: 700; overflow-wrap: anywhere; }
 .task-meta { color: #81786c; font-size: .88rem; }
 .task-actions, .today-checks { display: flex; flex: none; align-items: center; gap: 7px; }
