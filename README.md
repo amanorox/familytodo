@@ -45,7 +45,9 @@ npm start
 
 ## Apache2 リバースプロキシ例
 
-Node.js の Express が画面・API・Socket.IO を配信します。Apache から HTTPS を終端し、すべてのアプリパスを Node.js に転送してください。`mod_proxy`、`mod_proxy_http`、`mod_headers`、`mod_ssl` を有効にし、Apache 2.4.47 以降では `upgrade=websocket` を利用できます。
+Node.js の Express が `/kids/`、親用URL、`/api/` と Socket.IO (`/socket.io/`) を配信します。Apache から HTTPS を終端し、公開URLのパスを変えずに Node.js へ転送してください。Node.js は既定で `127.0.0.1:3000` で待ち受け、Express は直前のプロキシ1台を信頼します。Apache を唯一のプロキシとして同じホスト上で動かし、Node.js のポートを外部公開しないでください。
+
+`mod_proxy`、`mod_proxy_http`、`mod_headers`、`mod_ssl` を有効にしてください。Apache 2.4.47 以降では `mod_proxy_http` の `upgrade=websocket` で Socket.IO の WebSocket 接続も転送できます。`/socket.io/` の設定は `/` より前に置き、通常の HTTP（Socket.IO の polling を含む）と WebSocket の両方をプロキシします。
 
 ```apache
 <VirtualHost *:443>
@@ -54,6 +56,7 @@ Node.js の Express が画面・API・Socket.IO を配信します。Apache か�
     SSLCertificateFile /etc/letsencrypt/live/your-domain.com/fullchain.pem
     SSLCertificateKeyFile /etc/letsencrypt/live/your-domain.com/privkey.pem
 
+    ProxyRequests Off
     ProxyPreserveHost On
     RequestHeader set X-Forwarded-Proto "https"
     ProxyPass        /socket.io/ http://127.0.0.1:3000/socket.io/ upgrade=websocket
