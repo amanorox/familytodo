@@ -60,6 +60,7 @@ button { cursor: pointer; }
 .parent-stamp input:focus-visible + span { outline: 3px solid #222; outline-offset: 3px; border-radius: 50%; }
 .empty-message { max-width: 1050px; margin: 20px auto; padding: 26px; border-radius: 14px; background: white; text-align: center; font-size: 1.2rem; }
 .kids-page footer { padding: 6px 12px; color: #84796b; text-align: center; font-size: .9rem; }
+.kids-page.celebration-open { overflow: hidden; }
 
 .admin-page { max-width: 1120px; margin: auto; padding: 22px clamp(14px, 4vw, 36px) 48px; }
 .admin-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
@@ -108,13 +109,13 @@ body.task-dragging { user-select: none; }
 
 .celebration {
   position: fixed; inset: 0; z-index: 20; display: grid; place-items: center;
-  overflow: hidden; background: #111827a8;
+  overflow: hidden; background: radial-gradient(ellipse at 50% 32%, #101a31 0, #050914 58%, #02040a 100%);
 }
 #fireworks { position: absolute; inset: 0; width: 100%; height: 100%; }
-.celebration-card { position: relative; z-index: 1; width: min(90vw, 440px); padding: 30px 24px; border-radius: 22px; background: #fff; text-align: center; box-shadow: 0 12px 50px #0005; animation: pop .4s ease-out; }
-.celebration-kicker { margin: 0; font-size: 1.8rem; }
-.celebration-card h2 { margin: 8px 0; color: #ec8b20; font-size: 2.4rem; }
-.celebration-card p:not(.celebration-kicker) { font-size: 1.15rem; }
+.celebration-card { position: relative; z-index: 1; width: min(94vw, 620px); padding: 18px; color: white; text-align: center; animation: pop .4s ease-out; }
+.celebration-card h2 { margin: 8px 0; color: #fff; font-size: clamp(1.7rem, 5vw, 2.4rem); text-shadow: 0 0 14px #ffbd52, 0 0 30px #ff8c2499; }
+.celebration-card p { margin: 14px 0 20px; color: #e8eaf0; font-size: 1.15rem; }
+.celebration .button.primary { min-width: 74px; background: #fff; color: #222; }
 @keyframes pop { from { transform: scale(.75); opacity: .3; } to { transform: scale(1); opacity: 1; } }
 
 @media (max-width: 620px) {

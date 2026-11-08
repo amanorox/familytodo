@@ -120,13 +120,100 @@ const canvas = document.getElementById("fireworks");
 const context = canvas.getContext("2d");
 let animationFrame = 0;
 let particles = [];
-let launchTimers = [];
+let launchTimer = 0;
+
+function addShapeLine(points, start, end, spacing = 6) {
+  const distance = Math.hypot(end.x - start.x, end.y - start.y);
+  const steps = Math.max(1, Math.ceil(distance / spacing));
+  for (let i = 0; i <= steps; i++) {
+    const progress = i / steps;
+    points.push({
+      x: start.x + (end.x - start.x) * progress,
+      y: start.y + (end.y - start.y) * progress,
+    });
+  }
+}
+
+function addShapePolyline(points, vertices, close = false) {
+  for (let i = 1; i < vertices.length; i++) addShapeLine(points, vertices[i - 1], vertices[i]);
+  if (close) addShapeLine(points, vertices.at(-1), vertices[0]);
+}
+
+function addShapeEllipse(points, x, y, radiusX, radiusY = radiusX, spacing = 6) {
+  const steps = Math.ceil((Math.PI * 2 * Math.max(radiusX, radiusY)) / spacing);
+  for (let i = 0; i < steps; i++) {
+    const angle = (Math.PI * 2 * i) / steps;
+    points.push({ x: x + Math.cos(angle) * radiusX, y: y + Math.sin(angle) * radiusY });
+  }
+}
+
+function catFireworkPoints() {
+  const points = [];
+  addShapePolyline(points, [
+    { x: -27, y: -18 }, { x: -45, y: -44 }, { x: -35, y: -5 },
+    { x: -37, y: 8 }, { x: -31, y: 23 }, { x: -19, y: 34 },
+    { x: 0, y: 40 }, { x: 19, y: 34 }, { x: 31, y: 23 },
+    { x: 37, y: 8 }, { x: 35, y: -5 }, { x: 45, y: -44 },
+    { x: 27, y: -18 }, { x: 17, y: -27 }, { x: 0, y: -31 },
+    { x: -17, y: -27 }, { x: -27, y: -18 },
+  ]);
+  addShapeEllipse(points, -13, 1, 5, 6);
+  addShapeEllipse(points, 13, 1, 5, 6);
+  addShapePolyline(points, [{ x: -5, y: 12 }, { x: 0, y: 16 }, { x: 5, y: 12 }]);
+  addShapePolyline(points, [{ x: 0, y: 16 }, { x: -5, y: 22 }]);
+  addShapePolyline(points, [{ x: 0, y: 16 }, { x: 5, y: 22 }]);
+  for (const side of [-1, 1]) {
+    addShapeLine(points, { x: side * 24, y: 11 }, { x: side * 48, y: 6 });
+    addShapeLine(points, { x: side * 25, y: 18 }, { x: side * 49, y: 20 });
+  }
+  return points;
+}
+
+function turtleFireworkPoints() {
+  const points = [];
+  addShapeEllipse(points, 0, 3, 29, 23);
+  addShapeEllipse(points, 0, 3, 22, 16);
+  addShapeEllipse(points, 0, -34, 12, 12);
+  addShapePolyline(points, [
+    { x: -13, y: -13 }, { x: -38, y: -28 }, { x: -34, y: -9 }, { x: -25, y: -3 },
+  ]);
+  addShapePolyline(points, [
+    { x: 13, y: -13 }, { x: 38, y: -28 }, { x: 34, y: -9 }, { x: 25, y: -3 },
+  ]);
+  addShapePolyline(points, [
+    { x: -17, y: 18 }, { x: -33, y: 30 }, { x: -27, y: 39 }, { x: -12, y: 25 },
+  ]);
+  addShapePolyline(points, [
+    { x: 17, y: 18 }, { x: 33, y: 30 }, { x: 27, y: 39 }, { x: 12, y: 25 },
+  ]);
+  addShapePolyline(points, [{ x: -7, y: 24 }, { x: 0, y: 39 }, { x: 7, y: 24 }]);
+  addShapePolyline(points, [{ x: -21, y: 3 }, { x: 0, y: -13 }, { x: 21, y: 3 }]);
+  addShapeLine(points, { x: -21, y: 3 }, { x: 0, y: 19 });
+  addShapeLine(points, { x: 21, y: 3 }, { x: 0, y: 19 });
+  addShapeEllipse(points, -4, -36, 1.5);
+  addShapeEllipse(points, 4, -36, 1.5);
+  return points;
+}
 
 function launchFirework() {
   const x = Math.random() * window.innerWidth;
-  const y = Math.random() * window.innerHeight * 0.55;
+  const y = Math.random() * window.innerHeight * 0.42;
   const colors = ["#ff595e", "#ffca3a", "#8ac926", "#1982c4", "#c77dff", "#ff70a6"];
   const color = colors[Math.floor(Math.random() * colors.length)];
+  const shaped = Math.random() < 0.2;
+  const points = shaped
+    ? (Math.random() < 0.5 ? catFireworkPoints() : turtleFireworkPoints())
+    : null;
+  if (points) {
+    const scale = Math.min(1.2, window.innerWidth / 180);
+    for (const point of points) {
+      particles.push({
+        x, y, originX: x, originY: y, targetX: point.x * scale, targetY: point.y * scale,
+        progress: 0, life: 1, color,
+      });
+    }
+    return;
+  }
   for (let i = 0; i < 72; i++) {
     const angle = (Math.PI * 2 * i) / 72;
     const speed = 1.4 + Math.random() * 4.2;
@@ -138,14 +225,21 @@ function drawFireworks() {
   context.clearRect(0, 0, window.innerWidth, window.innerHeight);
   particles = particles.filter((particle) => particle.life > 0);
   for (const particle of particles) {
-    particle.x += particle.vx;
-    particle.y += particle.vy;
-    particle.vy += 0.025;
-    particle.life -= 0.012;
+    if (particle.targetX !== undefined) {
+      particle.progress = Math.min(1, particle.progress + 0.08);
+      particle.x = particle.originX + particle.targetX * particle.progress;
+      particle.y = particle.originY + particle.targetY * particle.progress;
+      particle.life -= 0.012;
+    } else {
+      particle.x += particle.vx;
+      particle.y += particle.vy;
+      particle.vy += 0.025;
+      particle.life -= 0.012;
+    }
     context.globalAlpha = particle.life;
     context.fillStyle = particle.color;
     context.beginPath();
-    context.arc(particle.x, particle.y, 3, 0, Math.PI * 2);
+    context.arc(particle.x, particle.y, particle.targetX === undefined ? 3 : 2.5, 0, Math.PI * 2);
     context.fill();
   }
   context.globalAlpha = 1;
@@ -161,20 +255,22 @@ function resizeFireworks() {
 
 function celebrate() {
   cancelAnimationFrame(animationFrame);
-  launchTimers.forEach(clearTimeout);
-  launchTimers = [];
+  clearInterval(launchTimer);
   particles = [];
   resizeFireworks();
   overlay.hidden = false;
-  for (let i = 0; i < 5; i++) launchTimers.push(setTimeout(launchFirework, i * 350));
+  document.body.classList.add("celebration-open");
+  launchFirework();
+  launchTimer = setInterval(launchFirework, 650);
   drawFireworks();
 }
 
 document.getElementById("close-celebration").addEventListener("click", () => {
   overlay.hidden = true;
+  document.body.classList.remove("celebration-open");
   cancelAnimationFrame(animationFrame);
-  launchTimers.forEach(clearTimeout);
-  launchTimers = [];
+  clearInterval(launchTimer);
+  launchTimer = 0;
   particles = [];
 });
 window.addEventListener("resize", () => {
