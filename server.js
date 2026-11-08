@@ -237,7 +237,6 @@ function createTodoServer({
 
     socket.on("task:toggle_parent", (payload, acknowledge = () => {}) => {
       try {
-        requireAdmin(socket);
         requireToday(payload?.date);
         if (typeof payload.status !== "boolean") throw new Error("チェック内容が正しくありません。");
         const before = getDayState(db, payload.date).allParentChecked;

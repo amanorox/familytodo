@@ -52,8 +52,12 @@ button { cursor: pointer; }
 .stamp span::before { content: "🐾"; font-size: 1.7rem; filter: grayscale(1); opacity: .46; }
 .stamp input:checked + span::before { content: "😺"; filter: none; opacity: 1; }
 .stamp input:focus-visible + span { outline: 3px solid #222; outline-offset: 3px; border-radius: 50%; }
-.parent-stamp { display: inline-grid; place-items: center; width: 52px; height: 52px; border: 3px solid var(--blue); border-radius: 50%; background: white; font-size: 1.55rem; }
-.parent-stamp.checked { background: #e5efff; }
+.parent-stamp { position: relative; display: inline-grid; place-items: center; width: 52px; height: 52px; border: 3px solid var(--blue); border-radius: 50%; background: white; font-size: 1.55rem; cursor: pointer; }
+.parent-stamp:active { transform: scale(.9); }
+.parent-stamp input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.parent-stamp span::before { content: "🐾"; filter: grayscale(1); opacity: .46; }
+.parent-stamp input:checked + span::before { content: "🌸"; filter: none; opacity: 1; }
+.parent-stamp input:focus-visible + span { outline: 3px solid #222; outline-offset: 3px; border-radius: 50%; }
 .empty-message { max-width: 1050px; margin: 20px auto; padding: 26px; border-radius: 14px; background: white; text-align: center; font-size: 1.2rem; }
 .kids-page footer { padding: 6px 12px; color: #84796b; text-align: center; font-size: .9rem; }
 
@@ -86,9 +90,8 @@ button { cursor: pointer; }
 .small-button { padding: 7px 10px; border: 0; border-radius: 8px; background: #edf0f5; }
 .small-button.delete { background: #fde9e5; color: #9c3426; }
 .today-checks { gap: 12px; }
-.parent-toggle, .skip-toggle { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
-.parent-toggle input, .skip-toggle input { width: 20px; height: 20px; accent-color: var(--blue); }
-.skip-toggle input { accent-color: #d78a3b; }
+.skip-toggle { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.skip-toggle input { width: 20px; height: 20px; accent-color: #d78a3b; }
 .child-names { display: flex; flex-wrap: wrap; gap: 14px; }
 .child-name { display: flex; align-items: center; gap: 8px; }
 .child-name-input { width: 150px; }

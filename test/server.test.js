@@ -4,7 +4,7 @@ const { io: connectSocket } = require("socket.io-client");
 const { createDatabase, todayKey } = require("../db");
 const { createTodoServer } = require("../server");
 
-test("secret admin page gates schedule updates and completion sync", async (t) => {
+test("secret admin page gates schedule updates while kids page can approve tasks", async (t) => {
   const db = createDatabase(":memory:");
   const server = createTodoServer({
     db,
@@ -73,7 +73,7 @@ test("secret admin page gates schedule updates and completion sync", async (t) =
   const synced = new Promise((resolve) => {
     kid.once("task:sync", resolve);
   });
-  const parentCheck = await emit(parent, "task:toggle_parent", {
+  const parentCheck = await emit(kid, "task:toggle_parent", {
     taskId, date, status: true,
   });
   assert.equal(parentCheck.ok, true);

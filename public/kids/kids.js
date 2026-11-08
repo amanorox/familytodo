@@ -52,6 +52,34 @@ function makeStamp(task, childId, checked, childName) {
   return label;
 }
 
+function makeParentStamp(task) {
+  const label = document.createElement("label");
+  label.className = "parent-stamp";
+  const input = document.createElement("input");
+  input.type = "checkbox";
+  input.checked = task.parentChecked;
+  input.disabled = !socket.connected;
+  input.setAttribute("aria-label", `${task.title}：おやチェック`);
+  const mark = document.createElement("span");
+  mark.setAttribute("aria-hidden", "true");
+  label.append(input, mark);
+  input.addEventListener("change", () => {
+    input.disabled = true;
+    socket.emit("task:toggle_parent", {
+      taskId: task.id,
+      date: dateKey,
+      status: input.checked,
+    }, (result) => {
+      if (!result?.ok) {
+        input.checked = !input.checked;
+        connection.textContent = result?.error || "おやチェックを保存できませんでした。";
+      }
+      input.disabled = !socket.connected;
+    });
+  });
+  return label;
+}
+
 function render(state, celebrateNow = false) {
   currentState = state;
   dateKey = state.date;
@@ -80,11 +108,7 @@ function render(state, celebrateNow = false) {
     const child2 = document.createElement("td");
     child2.append(makeStamp(task, 2, task.child2Checked, state.children[1]?.name || "こども2"));
     const parent = document.createElement("td");
-    const parentMark = document.createElement("span");
-    parentMark.className = `parent-stamp${task.parentChecked ? " checked" : ""}`;
-    parentMark.setAttribute("aria-label", task.parentChecked ? "おやチェック済み" : "おやチェック待ち");
-    parentMark.textContent = task.parentChecked ? "🌸" : "🐾";
-    parent.append(parentMark);
+    parent.append(makeParentStamp(task));
     row.append(title, child1, child2, parent);
     taskBody.append(row);
   }

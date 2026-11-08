@@ -70,33 +70,13 @@ function createTodayTask(task) {
   title.textContent = task.title;
   const childStatus = document.createElement("span");
   childStatus.className = "task-meta";
-  childStatus.textContent = `こども1 ${task.child1Checked ? "😺" : "🐾"}　こども2 ${task.child2Checked ? "😺" : "🐾"}`;
+  childStatus.textContent =
+    `こども1 ${task.child1Checked ? "😺" : "🐾"}　こども2 ${task.child2Checked ? "😺" : "🐾"}　` +
+    `おやチェック ${task.parentChecked ? "🌸" : "🐾"}`;
   name.append(title, childStatus);
 
   const controls = document.createElement("div");
   controls.className = "today-checks";
-  const parentLabel = document.createElement("label");
-  parentLabel.className = "parent-toggle";
-  const parentInput = document.createElement("input");
-  parentInput.type = "checkbox";
-  parentInput.checked = task.parentChecked;
-  parentInput.disabled = task.isSkipped || !socket.connected;
-  parentInput.setAttribute("aria-label", `${task.title}のおやチェック`);
-  parentLabel.append(parentInput, document.createTextNode("おやチェック"));
-  parentInput.addEventListener("change", () => {
-    parentInput.disabled = true;
-    socket.emit("task:toggle_parent", {
-      taskId: task.id, date: dateKey, status: parentInput.checked,
-    }, (result) => {
-      if (!result?.ok) {
-        parentInput.checked = !parentInput.checked;
-        showNotice(result?.error || "おやチェックを保存できませんでした。", true);
-      }
-      parentInput.disabled = !socket.connected;
-    });
-  });
-  controls.append(parentLabel);
-
   const schedule = scheduleTasks.find((item) => item.id === task.id);
   if (schedule && schedule.repeatType !== "single") {
     const skipLabel = document.createElement("label");
