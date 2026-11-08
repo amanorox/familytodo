@@ -88,6 +88,10 @@ button { cursor: pointer; }
 .task-meta { color: #81786c; font-size: .88rem; }
 .task-actions, .today-checks { display: flex; flex: none; align-items: center; gap: 7px; }
 .small-button { padding: 7px 10px; border: 0; border-radius: 8px; background: #edf0f5; }
+.drag-handle { padding: 5px 9px; border: 0; border-radius: 8px; background: #edf0f5; color: #3e4c61; cursor: grab; touch-action: none; user-select: none; }
+.drag-handle:active { cursor: grabbing; }
+.admin-task.is-dragging { border-style: dashed; opacity: .55; }
+body.task-dragging { user-select: none; }
 .small-button.delete { background: #fde9e5; color: #9c3426; }
 .today-checks { gap: 12px; }
 .skip-toggle { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }

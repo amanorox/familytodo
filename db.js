@@ -27,7 +27,8 @@ function createDatabase(filename = process.env.DB_PATH || path.join(__dirname, "
       repeat_days TEXT,
       scheduled_date TEXT,
       is_override INTEGER NOT NULL DEFAULT 0,
-      active INTEGER NOT NULL DEFAULT 1
+      active INTEGER NOT NULL DEFAULT 1,
+      display_order INTEGER NOT NULL DEFAULT 0
     );
 
     CREATE TABLE IF NOT EXISTS task_logs (
@@ -45,6 +46,11 @@ function createDatabase(filename = process.env.DB_PATH || path.join(__dirname, "
     CREATE INDEX IF NOT EXISTS idx_tasks_active ON tasks(active);
     CREATE INDEX IF NOT EXISTS idx_task_logs_date ON task_logs(date);
   `);
+  const taskColumns = db.pragma("table_info(tasks)");
+  if (!taskColumns.some((column) => column.name === "display_order")) {
+    db.exec("ALTER TABLE tasks ADD COLUMN display_order INTEGER NOT NULL DEFAULT 0");
+  }
+  db.exec("CREATE INDEX IF NOT EXISTS idx_tasks_active_order ON tasks(active, display_order, id)");
 
   const addChild = db.prepare(
     "INSERT OR IGNORE INTO children (id, name, avatar, display_order) VALUES (?, ?, ?, ?)"
@@ -96,7 +102,7 @@ function todayKey(date = new Date()) {
 
 function getDayState(db, date) {
   const weekday = new Date(`${date}T12:00:00Z`).getUTCDay();
-  const candidates = db.prepare("SELECT * FROM tasks WHERE active = 1 ORDER BY id").all();
+  const candidates = db.prepare("SELECT * FROM tasks WHERE active = 1 ORDER BY display_order, id").all();
   const tasksForDate = candidates.filter((task) => {
     if (task.repeat_type === "single") return task.scheduled_date === date;
     if (task.repeat_type === "weekly") {

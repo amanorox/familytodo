@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
+const Database = require("better-sqlite3");
 const { createDatabase, getDayState } = require("../db");
 
 function setup() {
@@ -21,6 +22,35 @@ test("existing todo.txt is imported once into a new persistent database", (t) =>
   db.close();
 });
 
+test("existing databases gain display order without changing their initial task order", (t) => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "familytodo-migration-test-"));
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
+  const filename = path.join(directory, "todo.db");
+  const legacyDb = new Database(filename);
+  legacyDb.exec(`
+    CREATE TABLE tasks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      category TEXT NOT NULL DEFAULT 'せいかつ',
+      repeat_type TEXT NOT NULL DEFAULT 'daily',
+      repeat_days TEXT,
+      scheduled_date TEXT,
+      is_override INTEGER NOT NULL DEFAULT 0,
+      active INTEGER NOT NULL DEFAULT 1
+    );
+    INSERT INTO tasks (title) VALUES ('一つ目'), ('二つ目');
+  `);
+  legacyDb.close();
+
+  const db = createDatabase(filename);
+  assert.deepEqual(getDayState(db, "2026-11-09").tasks.map((task) => task.title), ["一つ目", "二つ目"]);
+  assert.deepEqual(
+    db.prepare("SELECT display_order FROM tasks ORDER BY id").all().map((task) => task.display_order),
+    [0, 0],
+  );
+  db.close();
+});
+
 test("daily and weekly tasks are selected by the requested weekday", () => {
   const db = setup();
   db.prepare("INSERT INTO tasks (title, repeat_type) VALUES ('毎日', 'daily')").run();
@@ -30,6 +60,16 @@ test("daily and weekly tasks are selected by the requested weekday", () => {
   const state = getDayState(db, "2026-11-09");
   assert.deepEqual(state.tasks.map((task) => task.title), ["毎日", "月曜"]);
   assert.equal(state.allParentChecked, false);
+  db.close();
+});
+
+test("tasks are returned in their configured display order", () => {
+  const db = setup();
+  db.prepare("INSERT INTO tasks (title) VALUES ('先に登録'), ('あとに登録')").run();
+  db.prepare("UPDATE tasks SET display_order = 1 WHERE title = '先に登録'").run();
+
+  const state = getDayState(db, "2026-11-09");
+  assert.deepEqual(state.tasks.map((task) => task.title), ["あとに登録", "先に登録"]);
   db.close();
 });
 

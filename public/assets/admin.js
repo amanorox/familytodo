@@ -6,6 +6,7 @@ const notice = document.getElementById("admin-notice");
 let dayState = null;
 let scheduleTasks = [];
 let dateKey = "";
+let reorderingTasks = false;
 
 function setControlsEnabled(enabled) {
   document.querySelectorAll("button, input, select").forEach((control) => {
@@ -165,9 +166,10 @@ function renderSchedule() {
     allTasks.append(empty);
     return;
   }
-  scheduleTasks.forEach((task) => {
+  scheduleTasks.forEach((task, index) => {
     const row = document.createElement("div");
     row.className = "admin-task";
+    row.dataset.taskId = String(task.id);
     const detail = document.createElement("div");
     detail.className = "admin-task-main";
     const title = document.createElement("strong");
@@ -179,6 +181,27 @@ function renderSchedule() {
     detail.append(title, meta);
     const actions = document.createElement("div");
     actions.className = "task-actions";
+    const dragHandle = document.createElement("button");
+    dragHandle.type = "button";
+    dragHandle.className = "drag-handle";
+    dragHandle.textContent = "☰";
+    dragHandle.disabled = !socket.connected || reorderingTasks;
+    dragHandle.setAttribute("aria-label", `${task.title}をドラッグして移動`);
+    dragHandle.addEventListener("pointerdown", startTaskDrag);
+    const moveUp = document.createElement("button");
+    moveUp.type = "button";
+    moveUp.className = "small-button";
+    moveUp.textContent = "上へ";
+    moveUp.disabled = !socket.connected || reorderingTasks || index === 0;
+    moveUp.setAttribute("aria-label", `${task.title}を上へ移動`);
+    moveUp.addEventListener("click", () => moveTask(index, -1));
+    const moveDown = document.createElement("button");
+    moveDown.type = "button";
+    moveDown.className = "small-button";
+    moveDown.textContent = "下へ";
+    moveDown.disabled = !socket.connected || reorderingTasks || index === scheduleTasks.length - 1;
+    moveDown.setAttribute("aria-label", `${task.title}を下へ移動`);
+    moveDown.addEventListener("click", () => moveTask(index, 1));
     const edit = document.createElement("button");
     edit.type = "button";
     edit.className = "small-button";
@@ -198,10 +221,84 @@ function renderSchedule() {
         showNotice(error.message, true);
       }
     });
-    actions.append(edit, remove);
+    actions.append(dragHandle, moveUp, moveDown, edit, remove);
     row.append(detail, actions);
     allTasks.append(row);
   });
+}
+
+async function moveTask(index, offset) {
+  if (reorderingTasks) return;
+  const taskIds = scheduleTasks.map((task) => task.id);
+  const [taskId] = taskIds.splice(index, 1);
+  taskIds.splice(index + offset, 0, taskId);
+  await saveTaskOrder(taskIds);
+}
+
+async function saveTaskOrder(taskIds) {
+  const previousTasks = scheduleTasks;
+  const tasksById = new Map(scheduleTasks.map((task) => [task.id, task]));
+  scheduleTasks = taskIds.map((id) => tasksById.get(id));
+  reorderingTasks = true;
+  renderSchedule();
+  try {
+    await emitScheduleUpdate({ action: "reorder", taskIds });
+    await loadSchedule();
+    showNotice("TODOリストの順番を保存しました。");
+  } catch (error) {
+    scheduleTasks = previousTasks;
+    let message = error.message;
+    try {
+      await loadSchedule();
+    } catch (refreshError) {
+      message += ` ${refreshError.message}`;
+    }
+    showNotice(message, true);
+  } finally {
+    reorderingTasks = false;
+    renderSchedule();
+  }
+}
+
+function startTaskDrag(event) {
+  if (!socket.connected || reorderingTasks || event.button !== 0) return;
+  const row = event.currentTarget.closest(".admin-task");
+  if (!row) return;
+  event.preventDefault();
+  reorderingTasks = true;
+  row.classList.add("is-dragging");
+  document.body.classList.add("task-dragging");
+  activeTaskDrag = {
+    pointerId: event.pointerId,
+    row,
+    originalIds: [...allTasks.querySelectorAll(".admin-task")].map((item) => Number(item.dataset.taskId)),
+  };
+}
+
+function moveDraggedTask(event) {
+  if (!activeTaskDrag || event.pointerId !== activeTaskDrag.pointerId) return;
+  event.preventDefault();
+  const target = document.elementFromPoint(event.clientX, event.clientY)?.closest(".admin-task");
+  if (!target || target === activeTaskDrag.row || target.parentElement !== allTasks) return;
+  const rect = target.getBoundingClientRect();
+  allTasks.insertBefore(activeTaskDrag.row, event.clientY < rect.top + rect.height / 2 ? target : target.nextSibling);
+}
+
+async function finishTaskDrag(event, cancelled = false) {
+  if (!activeTaskDrag || event.pointerId !== activeTaskDrag.pointerId) return;
+  const { row, originalIds } = activeTaskDrag;
+  activeTaskDrag = null;
+  row.classList.remove("is-dragging");
+  document.body.classList.remove("task-dragging");
+  const taskIds = cancelled
+    ? originalIds
+    : [...allTasks.querySelectorAll(".admin-task")].map((item) => Number(item.dataset.taskId));
+  if (cancelled || taskIds.every((id, index) => id === originalIds[index])) {
+    reorderingTasks = false;
+    renderSchedule();
+    return;
+  }
+  await saveTaskOrder(taskIds);
 }
 
 async function loadSchedule() {
@@ -262,6 +359,7 @@ document.getElementById("exception-form").addEventListener("submit", async (even
 setControlsEnabled(false);
 socket.on("connect", () => {
   setControlsEnabled(true);
+  renderSchedule();
   document.getElementById("admin-connection").textContent = "リアルタイム接続中";
   socket.emit("state:get", null, (result) => {
     if (result?.ok) {
@@ -279,5 +377,9 @@ socket.on("disconnect", () => {
   document.getElementById("admin-connection").textContent = "再接続しています...";
 });
 socket.on("task:sync", (state) => renderDay(state));
+let activeTaskDrag = null;
+document.addEventListener("pointermove", moveDraggedTask);
+document.addEventListener("pointerup", (event) => finishTaskDrag(event));
+document.addEventListener("pointercancel", (event) => finishTaskDrag(event, true));
 loadSchedule().catch((error) => showNotice(error.message, true));
 setRepeatFields();

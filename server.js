@@ -110,7 +110,7 @@ function createTodoServer({
     try {
       res.json({
         tasks: db
-          .prepare("SELECT * FROM tasks WHERE active = 1 ORDER BY id")
+          .prepare("SELECT * FROM tasks WHERE active = 1 ORDER BY display_order, id")
           .all()
           .map((task) => ({
             id: task.id,
@@ -164,8 +164,8 @@ function createTodoServer({
       return;
     }
     db.prepare(`
-      INSERT INTO tasks (title, category, repeat_type, repeat_days, scheduled_date)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO tasks (title, category, repeat_type, repeat_days, scheduled_date, display_order)
+      VALUES (?, ?, ?, ?, ?, (SELECT COALESCE(MAX(display_order), -1) + 1 FROM tasks WHERE active = 1))
     `).run(task.title, task.category, task.repeatType, JSON.stringify(task.repeatDays), task.scheduledDate);
   }
 
@@ -180,9 +180,30 @@ function createTodoServer({
     } else if (data.action === "add_exception") {
       const task = validateTask({ ...data.taskData, repeatType: "single", scheduledDate: todayKey() });
       db.prepare(`
-        INSERT INTO tasks (title, category, repeat_type, repeat_days, scheduled_date, is_override)
-        VALUES (?, ?, 'single', '[]', ?, 1)
+        INSERT INTO tasks (title, category, repeat_type, repeat_days, scheduled_date, is_override, display_order)
+        VALUES (?, ?, 'single', '[]', ?, 1,
+          (SELECT COALESCE(MAX(display_order), -1) + 1 FROM tasks WHERE active = 1))
       `).run(task.title, task.category, todayKey());
+    } else if (data.action === "reorder") {
+      if (!Array.isArray(data.taskIds) || data.taskIds.some((id) => !Number.isInteger(id))) {
+        throw new Error("並び順の指定が正しくありません。");
+      }
+      const currentTaskIds = db
+        .prepare("SELECT id FROM tasks WHERE active = 1 ORDER BY display_order, id")
+        .all()
+        .map((task) => task.id);
+      const requestedIds = new Set(data.taskIds);
+      if (
+        requestedIds.size !== data.taskIds.length ||
+        requestedIds.size !== currentTaskIds.length ||
+        currentTaskIds.some((id) => !requestedIds.has(id))
+      ) {
+        throw new Error("並び順が最新のタスク一覧と一致しません。画面を更新してください。");
+      }
+      db.transaction((taskIds) => {
+        const updateOrder = db.prepare("UPDATE tasks SET display_order = ? WHERE id = ? AND active = 1");
+        taskIds.forEach((id, index) => updateOrder.run(index, id));
+      })(data.taskIds);
     } else if (data.action === "skip") {
       requireToday(data.date);
       if (!Number.isInteger(data.taskId)) throw new Error("お休みにするタスクが正しくありません。");

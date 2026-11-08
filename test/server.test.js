@@ -57,6 +57,7 @@ test("secret admin page gates schedule updates while kids page can approve tasks
     taskData: { title: "拒否される", repeatType: "daily" },
   });
   assert.equal(denied.ok, false);
+  assert.equal((await emit(kid, "task:update_schedule", { action: "reorder", taskIds: [] })).ok, false);
 
   const created = await emit(parent, "task:update_schedule", {
     action: "upsert",
@@ -80,6 +81,31 @@ test("secret admin page gates schedule updates while kids page can approve tasks
   const state = await synced;
   assert.equal(state.allParentChecked, true);
   assert.equal(state.celebrate, true);
+
+  const secondCreated = await emit(parent, "task:update_schedule", {
+    action: "upsert",
+    taskData: { title: "かたづけ", category: "せいかつ", repeatType: "daily" },
+  });
+  assert.equal(secondCreated.ok, true);
+  const secondTaskId = db.prepare("SELECT id FROM tasks WHERE title = ?").get("かたづけ").id;
+  const reorderedState = new Promise((resolve) => {
+    kid.once("task:sync", resolve);
+  });
+  const invalidReorder = await emit(parent, "task:update_schedule", {
+    action: "reorder",
+    taskIds: [taskId, taskId],
+  });
+  assert.equal(invalidReorder.ok, false);
+  const reordered = await emit(parent, "task:update_schedule", {
+    action: "reorder",
+    taskIds: [secondTaskId, taskId],
+  });
+  assert.equal(reordered.ok, true);
+  assert.deepEqual((await reorderedState).tasks.map((task) => task.id), [secondTaskId, taskId]);
+  const scheduleResponse = await fetch(`${origin}/api/admin/tasks`, {
+    headers: { Cookie: "familytodo_admin=integration-test-cookie" },
+  });
+  assert.deepEqual((await scheduleResponse.json()).tasks.map((task) => task.id), [secondTaskId, taskId]);
   kid.disconnect();
   parent.disconnect();
 });
