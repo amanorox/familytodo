@@ -1,0 +1,22 @@
+{
+  "name": "familytodo",
+  "version": "2.0.0",
+  "private": true,
+  "description": "家族向けリアルタイムTODOアプリ",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18.12"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.4.1",
+    "express": "^5.1.0",
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "socket.io-client": "^4.8.1"
+  }
+}

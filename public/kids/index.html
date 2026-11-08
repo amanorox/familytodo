@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fff4d6">
+  <title>まいにちのTODO</title>
+  <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body class="kids-page">
+  <header class="kids-header">
+    <h1>📋 まいにちのTODO</h1>
+    <p id="today-label" class="date-label"></p>
+    <p id="connection" class="connection" role="status">つうしんをかくにんしています...</p>
+  </header>
+  <main>
+    <div class="table-wrap">
+      <table class="todo-table">
+        <thead><tr>
+          <th class="task-heading">やること</th>
+          <th id="child-1-heading">こども1<br>チェック</th>
+          <th id="child-2-heading">こども2<br>チェック</th>
+          <th class="parent-heading">おやチェック</th>
+        </tr></thead>
+        <tbody id="tasks"></tbody>
+      </table>
+    </div>
+    <p id="empty" class="empty-message" hidden>きょうのTODOはありません 🐾</p>
+  </main>
+  <footer>チェックがつかないときは、おうちの人におしえてね 🐾</footer>
+
+  <div id="celebration" class="celebration" hidden role="dialog" aria-modal="true" aria-labelledby="celebration-title">
+    <canvas id="fireworks" aria-hidden="true"></canvas>
+    <div class="celebration-card">
+      <p class="celebration-kicker">🐾 ✨ 🐾</p>
+      <h2 id="celebration-title">はなまる！</h2>
+      <p>きょうのTODO、ぜんぶできたね！</p>
+      <button id="close-celebration" type="button" class="button primary">とじる</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/kids/kids.js"></script>
+</body>
+</html>
