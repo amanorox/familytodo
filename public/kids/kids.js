@@ -2,6 +2,7 @@ const socket = io();
 const taskBody = document.getElementById("tasks");
 const emptyMessage = document.getElementById("empty");
 const connection = document.getElementById("connection");
+const STAMP_SOUND_VOLUME = 0.5;
 let dateKey = "";
 let currentState = null;
 let audioContext;
@@ -15,7 +16,7 @@ function playStampSound() {
   oscillator.type = "sine";
   oscillator.frequency.setValueAtTime(660, audioContext.currentTime);
   oscillator.frequency.exponentialRampToValueAtTime(330, audioContext.currentTime + 0.09);
-  gain.gain.setValueAtTime(0.18, audioContext.currentTime);
+  gain.gain.setValueAtTime(STAMP_SOUND_VOLUME, audioContext.currentTime);
   gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.12);
   oscillator.connect(gain).connect(audioContext.destination);
   oscillator.start();
