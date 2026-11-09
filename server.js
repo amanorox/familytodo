@@ -78,6 +78,7 @@ function createTodoServer({
   });
   app.use(express.json({ limit: "32kb" }));
   app.use("/assets", express.static(path.join(publicDir, "assets"), { index: false }));
+  app.use("/icons", express.static(path.join(__dirname, "icons"), { index: false }));
 
   app.get("/", (_req, res) => res.redirect(302, "/kids/"));
   app.use("/kids", express.static(path.join(publicDir, "kids"), { index: "index.html" }));

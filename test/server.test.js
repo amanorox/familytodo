@@ -27,6 +27,7 @@ test("secret admin page gates schedule updates while kids page can approve tasks
   assert.equal((await fetch(`${origin}/kids/`)).status, 200);
   assert.equal((await fetch(`${origin}/kids/kids.js`)).status, 200);
   assert.equal((await fetch(`${origin}/assets/style.css`)).status, 200);
+  assert.equal((await fetch(`${origin}/icons/icon-512.png`)).status, 200);
   assert.equal(
     (await fetch(`${origin}/api/admin/tasks`, {
       headers: { Cookie: "familytodo_admin=integration-test-cookie" },
