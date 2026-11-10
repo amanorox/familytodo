@@ -20,14 +20,19 @@ button { cursor: pointer; }
 
 .kids-page { padding-bottom: 30px; }
 .kids-header {
-  padding: 18px 24px 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 14px;
+  padding: 8px 16px;
   text-align: center;
   background: #ffce75;
   box-shadow: 0 2px 8px #72552a25;
 }
-.kids-header h1 { margin: 0; font-size: clamp(1.35rem, 3vw, 2rem); }
-.date-label { margin: 6px 0 2px; font-size: 1.05rem; font-weight: 700; }
-.connection { margin: 0; color: #5b654e; font-size: .88rem; }
+.kids-header h1 { margin: 0; font-size: clamp(1.1rem, 2.5vw, 1.65rem); }
+.date-label { margin: 0; font-size: .95rem; font-weight: 700; }
+.connection { margin: 0; color: #5b654e; font-size: .8rem; }
 .kids-page main { padding: 24px clamp(8px, 3vw, 32px); }
 .table-wrap { max-width: 1050px; margin: auto; overflow-x: auto; border-radius: 15px; box-shadow: 0 3px 14px #4c3a2017; }
 .todo-table { width: 100%; min-width: 610px; border-collapse: collapse; background: white; }
@@ -119,7 +124,7 @@ body.task-dragging { user-select: none; }
 @keyframes pop { from { transform: scale(.75); opacity: .3; } to { transform: scale(1); opacity: 1; } }
 
 @media (max-width: 620px) {
-  .kids-header { padding: 14px 10px 10px; }
+  .kids-header { padding: 7px 8px; }
   .kids-page main { padding: 16px 6px; }
   .todo-table { min-width: 540px; }
   .todo-table thead .task-heading { width: 39%; }
