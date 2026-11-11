@@ -43,6 +43,11 @@ function createDatabase(filename = process.env.DB_PATH || path.join(__dirname, "
       UNIQUE (task_id, date)
     );
 
+    CREATE TABLE IF NOT EXISTS events (
+      date TEXT PRIMARY KEY,
+      title TEXT NOT NULL
+    );
+
     CREATE INDEX IF NOT EXISTS idx_tasks_active ON tasks(active);
     CREATE INDEX IF NOT EXISTS idx_task_logs_date ON task_logs(date);
   `);
@@ -102,6 +107,9 @@ function todayKey(date = new Date()) {
 
 function getDayState(db, date) {
   const weekday = new Date(`${date}T12:00:00Z`).getUTCDay();
+  const tomorrowDate = new Date(`${date}T12:00:00Z`);
+  tomorrowDate.setUTCDate(tomorrowDate.getUTCDate() + 1);
+  const tomorrowKey = tomorrowDate.toISOString().slice(0, 10);
   const candidates = db.prepare("SELECT * FROM tasks WHERE active = 1 ORDER BY display_order, id").all();
   const tasksForDate = candidates.filter((task) => {
     if (task.repeat_type === "single") return task.scheduled_date === date;
@@ -135,6 +143,7 @@ function getDayState(db, date) {
 
   return {
     date,
+    tomorrowEvent: db.prepare("SELECT title FROM events WHERE date = ?").get(tomorrowKey)?.title || "",
     children: db.prepare("SELECT id, name, avatar FROM children ORDER BY display_order, id").all(),
     tasks: dayTasks,
     allParentChecked:

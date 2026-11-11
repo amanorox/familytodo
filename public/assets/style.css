@@ -64,7 +64,9 @@ button { cursor: pointer; }
 .parent-stamp input:checked + span::before { content: "🌸"; filter: none; opacity: 1; }
 .parent-stamp input:focus-visible + span { outline: 3px solid #222; outline-offset: 3px; border-radius: 50%; }
 .empty-message { max-width: 1050px; margin: 20px auto; padding: 26px; border-radius: 14px; background: white; text-align: center; font-size: 1.2rem; }
-.kids-page footer { padding: 6px 12px; color: #84796b; text-align: center; font-size: .9rem; }
+.kids-page footer { display: grid; justify-items: center; gap: 5px; padding: 6px 12px; color: #84796b; text-align: center; font-size: .9rem; }
+.kids-page footer p { margin: 0; }
+.tomorrow-plan { padding: 10px 16px; border: 2px solid #f2c56b; border-radius: 14px; background: #fff1c9; color: #60451f; font-size: clamp(1.05rem, 3vw, 1.35rem); font-weight: 700; }
 .kids-page.celebration-open { overflow: hidden; }
 
 .admin-page { max-width: 1120px; margin: auto; padding: 22px clamp(14px, 4vw, 36px) 48px; }
@@ -74,6 +76,7 @@ button { cursor: pointer; }
 .panel { margin: 16px 0; padding: clamp(16px, 3vw, 24px); border: 1px solid var(--border); border-radius: 16px; background: #fff; box-shadow: 0 2px 9px #4c3a2010; }
 .panel h2 { margin: 0 0 14px; font-size: 1.2rem; }
 .panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.event-panel > .status-line { margin: -6px 0 14px; }
 .button { min-height: 42px; padding: 9px 15px; border: 0; border-radius: 9px; font-weight: 700; }
 .button.primary { background: var(--orange); color: white; }
 .button.secondary { background: #edf0f5; color: #3e4c61; }
@@ -87,6 +90,7 @@ button { cursor: pointer; }
 .weekday-options label { display: inline-flex; align-items: center; gap: 3px; }
 .weekday-options input { width: 18px; height: 18px; accent-color: var(--orange); }
 .form-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.form-actions.wide { grid-column: 1 / -1; }
 .task-list { display: grid; gap: 10px; }
 .admin-task, .today-task { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 14px; border: 1px solid #eee8dd; border-radius: 11px; }
 .admin-task-main { min-width: 0; }

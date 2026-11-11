@@ -3,16 +3,21 @@ const weekdayLabels = ["日", "月", "火", "水", "木", "金", "土"];
 const todayTasks = document.getElementById("today-tasks");
 const allTasks = document.getElementById("all-tasks");
 const notice = document.getElementById("admin-notice");
+const eventDateInput = document.getElementById("event-date");
+const eventTitleInput = document.getElementById("event-title");
+const eventDeleteButton = document.getElementById("event-delete");
 let dayState = null;
 let scheduleTasks = [];
 let dateKey = "";
 let reorderingTasks = false;
 let editingTaskId = null;
+let selectedEventExists = false;
 
 function setControlsEnabled(enabled) {
   document.querySelectorAll("button, input, select").forEach((control) => {
     control.disabled = !enabled;
   });
+  eventDeleteButton.disabled = !enabled || !selectedEventExists;
 }
 
 function showNotice(message, isError = false) {
@@ -27,6 +32,23 @@ function emitScheduleUpdate(payload) {
       else reject(new Error(result?.error || "更新できませんでした。"));
     });
   });
+}
+
+async function loadEvent(date) {
+  if (!date) return;
+  const response = await fetch(`/api/admin/event?date=${encodeURIComponent(date)}`, { cache: "no-store" });
+  if (!response.ok) throw new Error(response.status === 404 ? "親用URLから開き直してください。" : "イベントを読み込めませんでした。");
+  const data = await response.json();
+  if (eventDateInput.value !== date) return;
+  selectedEventExists = Boolean(data.event);
+  eventTitleInput.value = data.event?.title || "";
+  eventDeleteButton.disabled = !socket.connected || !selectedEventExists;
+}
+
+function nextDateKey(date) {
+  const nextDate = new Date(`${date}T12:00:00Z`);
+  nextDate.setUTCDate(nextDate.getUTCDate() + 1);
+  return nextDate.toISOString().slice(0, 10);
 }
 
 function setRepeatFields(form) {
@@ -435,6 +457,45 @@ taskForm.addEventListener("submit", async (event) => {
   }
 });
 
+eventDateInput.addEventListener("change", () => {
+  selectedEventExists = false;
+  eventDeleteButton.disabled = true;
+  loadEvent(eventDateInput.value).catch((error) => showNotice(error.message, true));
+});
+
+document.getElementById("event-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const saveButton = event.currentTarget.querySelector('[type="submit"]');
+  saveButton.disabled = true;
+  try {
+    await emitScheduleUpdate({
+      action: "event_upsert",
+      date: eventDateInput.value,
+      title: eventTitleInput.value,
+    });
+    await loadEvent(eventDateInput.value);
+    showNotice("イベントを保存しました。");
+  } catch (error) {
+    showNotice(error.message, true);
+  } finally {
+    saveButton.disabled = !socket.connected;
+  }
+});
+
+eventDeleteButton.addEventListener("click", async () => {
+  if (!selectedEventExists || !window.confirm(`「${eventTitleInput.value}」の予定を削除しますか？`)) return;
+  eventDeleteButton.disabled = true;
+  try {
+    await emitScheduleUpdate({ action: "event_delete", date: eventDateInput.value });
+    await loadEvent(eventDateInput.value);
+    showNotice("イベントを削除しました。");
+  } catch (error) {
+    showNotice(error.message, true);
+  } finally {
+    eventDeleteButton.disabled = !socket.connected || !selectedEventExists;
+  }
+});
+
 document.getElementById("exception-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   try {
@@ -462,6 +523,8 @@ socket.on("connect", () => {
   socket.emit("state:get", null, (result) => {
     if (result?.ok) {
       dateKey = result.state.date;
+      if (!eventDateInput.value) eventDateInput.value = nextDateKey(dateKey);
+      loadEvent(eventDateInput.value).catch((error) => showNotice(error.message, true));
       document.getElementById("admin-date").textContent =
         new Intl.DateTimeFormat("ja-JP", { dateStyle: "full", timeZone: "UTC" })
           .format(new Date(`${dateKey}T12:00:00Z`));

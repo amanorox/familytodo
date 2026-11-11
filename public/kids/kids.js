@@ -84,6 +84,9 @@ function makeParentStamp(task) {
 function render(state, celebrateNow = false) {
   currentState = state;
   dateKey = state.date;
+  const tomorrowPlan = document.getElementById("tomorrow-plan");
+  tomorrowPlan.hidden = !state.tomorrowEvent;
+  tomorrowPlan.textContent = state.tomorrowEvent ? `明日のよてい：${state.tomorrowEvent}` : "";
   document.getElementById("today-label").textContent =
     new Intl.DateTimeFormat("ja-JP", { dateStyle: "full", timeZone: "UTC" })
       .format(new Date(`${state.date}T12:00:00Z`));

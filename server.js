@@ -129,6 +129,15 @@ function createTodoServer({
     }
   });
 
+  app.get("/api/admin/event", (req, res) => {
+    if (!isAdminRequest(req)) return res.sendStatus(404);
+    if (!isDateKey(req.query.date)) {
+      return res.status(400).json({ error: "イベントの日付を指定してください。" });
+    }
+    const event = db.prepare("SELECT date, title FROM events WHERE date = ?").get(req.query.date) || null;
+    res.json({ event });
+  });
+
   io.use((socket, next) => {
     socket.data.isAdmin =
       cookieValue(socket.handshake.headers.cookie, "familytodo_admin") === adminCookie;
@@ -185,6 +194,17 @@ function createTodoServer({
         VALUES (?, ?, 'single', '[]', ?, 1,
           (SELECT COALESCE(MAX(display_order), -1) + 1 FROM tasks WHERE active = 1))
       `).run(task.title, task.category, todayKey());
+    } else if (data.action === "event_upsert") {
+      if (!isDateKey(data.date)) throw new Error("イベントの日付が正しくありません。");
+      const title = typeof data.title === "string" ? data.title.trim() : "";
+      if (!title || title.length > 120) throw new Error("イベント名は1〜120文字で入力してください。");
+      db.prepare(`
+        INSERT INTO events (date, title) VALUES (?, ?)
+        ON CONFLICT(date) DO UPDATE SET title = excluded.title
+      `).run(data.date, title);
+    } else if (data.action === "event_delete") {
+      if (!isDateKey(data.date)) throw new Error("イベントの日付が正しくありません。");
+      db.prepare("DELETE FROM events WHERE date = ?").run(data.date);
     } else if (data.action === "reorder") {
       if (!Array.isArray(data.taskIds) || data.taskIds.some((id) => !Number.isInteger(id))) {
         throw new Error("並び順の指定が正しくありません。");

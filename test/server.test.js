@@ -53,6 +53,47 @@ test("secret admin page gates schedule updates while kids page can approve tasks
     socket.emit(event, payload, resolve);
   });
   const date = todayKey();
+  const tomorrowDate = new Date(`${date}T12:00:00Z`);
+  tomorrowDate.setUTCDate(tomorrowDate.getUTCDate() + 1);
+  const tomorrow = tomorrowDate.toISOString().slice(0, 10);
+  assert.equal((await fetch(`${origin}/api/admin/event?date=${tomorrow}`)).status, 404);
+  const missingEvent = await fetch(`${origin}/api/admin/event?date=${tomorrow}`, {
+    headers: { Cookie: "familytodo_admin=integration-test-cookie" },
+  });
+  assert.deepEqual(await missingEvent.json(), { event: null });
+  assert.equal(
+    (await fetch(`${origin}/api/admin/event?date=2026-02-30`, {
+      headers: { Cookie: "familytodo_admin=integration-test-cookie" },
+    })).status,
+    400,
+  );
+
+  const eventSync = new Promise((resolve) => kid.once("task:sync", resolve));
+  const eventSaved = await emit(parent, "task:update_schedule", {
+    action: "event_upsert",
+    date: tomorrow,
+    title: " 塾 ",
+  });
+  assert.equal(eventSaved.ok, true);
+  assert.equal((await eventSync).tomorrowEvent, "塾");
+  assert.equal((await emit(parent, "task:update_schedule", {
+    action: "event_upsert",
+    date: tomorrow,
+    title: " ",
+  })).ok, false);
+  const savedEvent = await fetch(`${origin}/api/admin/event?date=${tomorrow}`, {
+    headers: { Cookie: "familytodo_admin=integration-test-cookie" },
+  });
+  assert.deepEqual(await savedEvent.json(), { event: { date: tomorrow, title: "塾" } });
+
+  const deleteSync = new Promise((resolve) => kid.once("task:sync", resolve));
+  const eventDeleted = await emit(parent, "task:update_schedule", {
+    action: "event_delete",
+    date: tomorrow,
+  });
+  assert.equal(eventDeleted.ok, true);
+  assert.equal((await deleteSync).tomorrowEvent, "");
+
   const denied = await emit(kid, "task:update_schedule", {
     action: "upsert",
     taskData: { title: "拒否される", repeatType: "daily" },

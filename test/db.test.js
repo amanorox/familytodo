@@ -63,6 +63,18 @@ test("daily and weekly tasks are selected by the requested weekday", () => {
   db.close();
 });
 
+test("day state includes only the event scheduled for the following date", () => {
+  const db = setup();
+  db.prepare("INSERT INTO events (date, title) VALUES (?, ?)").run("2026-11-10", "きょう");
+  db.prepare("INSERT INTO events (date, title) VALUES (?, ?)").run("2026-11-11", "塾");
+  db.prepare("INSERT INTO events (date, title) VALUES (?, ?)").run("2026-11-12", "えんそく");
+
+  assert.equal(getDayState(db, "2026-11-10").tomorrowEvent, "塾");
+  assert.equal(getDayState(db, "2026-11-11").tomorrowEvent, "えんそく");
+  assert.equal(getDayState(db, "2026-11-12").tomorrowEvent, "");
+  db.close();
+});
+
 test("tasks are returned in their configured display order", () => {
   const db = setup();
   db.prepare("INSERT INTO tasks (title) VALUES ('先に登録'), ('あとに登録')").run();

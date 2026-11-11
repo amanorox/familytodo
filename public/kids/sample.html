@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fff4d6">
+  <title>まいにちのTODO - 表示サンプル</title>
+  <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
+  <link rel="stylesheet" href="/assets/style.css">
+  <style>
+    .kids-sample-plan {
+      margin: 0 0 5px;
+      padding: 11px 18px;
+      border: 2px solid #f2c56b;
+      border-radius: 14px;
+      background: #fff1c9;
+      color: #60451f;
+      font-size: clamp(1.05rem, 3vw, 1.35rem);
+      font-weight: 700;
+    }
+    .kids-sample-help { margin: 0; }
+    .kids-sample-label {
+      margin: 0;
+      color: #756a5d;
+      font-size: .8rem;
+    }
+    .kids-sample-footer { display: grid; justify-items: center; gap: 5px; }
+  </style>
+</head>
+<body class="kids-page">
+  <header class="kids-header">
+    <h1>📋 まいにちのTODO</h1>
+    <p class="date-label">2026年11月11日（水）</p>
+    <p class="connection">つうしん OK</p>
+  </header>
+  <main>
+    <div class="table-wrap">
+      <table class="todo-table">
+        <thead><tr>
+          <th class="task-heading">やること</th>
+          <th>こども1<br>チェック</th>
+          <th>こども2<br>チェック</th>
+          <th class="parent-heading">おやチェック</th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <th scope="row" class="task-title">しゅくだい</th>
+            <td><span class="stamp"><input type="checkbox" checked disabled><span></span></span></td>
+            <td><span class="stamp stamp-2"><input type="checkbox" disabled><span></span></span></td>
+            <td><span class="parent-stamp"><input type="checkbox" disabled><span></span></span></td>
+          </tr>
+          <tr>
+            <th scope="row" class="task-title">ピアノのれんしゅう</th>
+            <td><span class="stamp"><input type="checkbox" disabled><span></span></span></td>
+            <td><span class="stamp stamp-2"><input type="checkbox" disabled><span></span></span></td>
+            <td><span class="parent-stamp"><input type="checkbox" disabled><span></span></span></td>
+          </tr>
+          <tr>
+            <th scope="row" class="task-title">はみがき</th>
+            <td><span class="stamp"><input type="checkbox" disabled><span></span></span></td>
+            <td><span class="stamp stamp-2"><input type="checkbox" disabled><span></span></span></td>
+            <td><span class="parent-stamp"><input type="checkbox" disabled><span></span></span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+  <footer class="kids-sample-footer">
+    <p class="kids-sample-label">表示サンプル</p>
+    <p class="kids-sample-plan">明日のよてい：塾</p>
+    <p class="kids-sample-help">チェックがつかないときは、おうちの人におしえてね 🐾</p>
+  </footer>
+</body>
+</html>
